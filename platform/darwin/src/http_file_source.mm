@@ -11,7 +11,7 @@
 #import "MGLLoggingConfiguration_Private.h"
 #import "MGLNetworkConfiguration_Private.h"
 
-#if TARGET_OS_IPHONE || TARGET_OS_SIMULATOR
+#if TARGET_OS_IOS
 #import "MGLAccountManager_Private.h"
 #endif
 
@@ -204,7 +204,7 @@ std::unique_ptr<AsyncRequest> HTTPFileSource::request(const Resource& resource, 
         NSURL *url = [NSURL URLWithString:@(resource.url.c_str())];
         MGLLogDebug(@"Requesting URI: %@", url.relativePath);
 
-#if TARGET_OS_IPHONE || TARGET_OS_SIMULATOR
+#if TARGET_OS_IOS
         if (impl->accountType == 0 &&
             ([url.host isEqualToString:@"mapbox.com"] || [url.host hasSuffix:@".mapbox.com"])) {
             NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];

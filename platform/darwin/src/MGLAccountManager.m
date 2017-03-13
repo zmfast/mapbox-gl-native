@@ -5,19 +5,19 @@
 #import "NSProcessInfo+MGLAdditions.h"
 #endif
 
-#if TARGET_OS_IPHONE || TARGET_OS_SIMULATOR
+#if TARGET_OS_IOS
 #import "MGLMapboxEvents.h"
 #import "MBXSKUToken.h"
-#endif
 
 static BOOL _MGLAccountsSDKEnabled;
+#endif
 
 @interface MGLAccountManager ()
 
 @property (atomic) NSString *accessToken;
 @property (nonatomic) NSURL *apiBaseURL;
 
-#if TARGET_OS_IPHONE || TARGET_OS_SIMULATOR
+#if TARGET_OS_IOS
 @property (atomic) NSString *skuToken;
 @property (atomic) NSDate *skuTokenExpiration;
 #endif
@@ -41,7 +41,7 @@ static BOOL _MGLAccountsSDKEnabled;
         [self setAPIBaseURL:[NSURL URLWithString:apiBaseURL]];
     }
 
-#if TARGET_OS_IPHONE || TARGET_OS_SIMULATOR
+#if TARGET_OS_IOS
     // TODO: Use MGL_OBJC_DYNAMIC_CAST (that requires moving the macro, where it
     // doesn't require a C++ header)
     NSNumber *accountsSDKNumber = [[NSBundle mainBundle] objectForInfoDictionaryKey:@"MGLMapboxAccountsSDKEnabled"];
@@ -89,7 +89,7 @@ static BOOL _MGLAccountsSDKEnabled;
 
     [MGLAccountManager sharedManager].accessToken = accessToken;
 
-#if TARGET_OS_IPHONE || TARGET_OS_SIMULATOR
+#if TARGET_OS_IOS
     dispatch_async(dispatch_get_main_queue(), ^{
         [MGLMapboxEvents setupWithAccessToken:accessToken];
     });
@@ -110,7 +110,7 @@ static BOOL _MGLAccountsSDKEnabled;
 
 #pragma mark - SKU Tokens
 
-#if TARGET_OS_IPHONE || TARGET_OS_SIMULATOR
+#if TARGET_OS_IOS
 
 + (BOOL)isAccountsSDKEnabled {
     return _MGLAccountsSDKEnabled;
