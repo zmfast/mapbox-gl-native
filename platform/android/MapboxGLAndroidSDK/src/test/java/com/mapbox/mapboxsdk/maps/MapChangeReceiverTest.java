@@ -1,8 +1,10 @@
 package com.mapbox.mapboxsdk.maps;
 
+import com.google.common.util.concurrent.ExecutionError;
 import com.mapbox.mapboxsdk.log.Logger;
 import com.mapbox.mapboxsdk.log.LoggerDefinition;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -51,6 +53,9 @@ public class MapChangeReceiverTest {
 
   @Mock
   private MapView.OnDidFinishRenderingMapListener onDidFinishRenderingMapListener;
+
+  @Mock
+  private MapView.OnDidBecomeIdleListener onDidBecomeIdleListener;
 
   @Mock
   private MapView.OnDidFinishLoadingStyleListener onDidFinishLoadingStyleListener;
@@ -304,6 +309,36 @@ public class MapChangeReceiverTest {
     doThrow(err).when(onDidFinishRenderingMapListener).onDidFinishRenderingMap(false);
     mapChangeEventManager.onDidFinishRenderingMap(false);
     verify(loggerDefinition).e(anyString(), anyString(), eq(err));
+  }
+
+  @Test
+  public void testOnDidBecomeIdleListener() {
+    mapChangeEventManager.addOnDidBecomeIdleListener(onDidBecomeIdleListener);
+    mapChangeEventManager.onDidBecomeIdle();
+    verify(onDidBecomeIdleListener).onDidBecomeIdle();
+    mapChangeEventManager.removeOnDidBecomeIdleListener(onDidBecomeIdleListener);
+    mapChangeEventManager.onDidBecomeIdle();
+    verify(onDidBecomeIdleListener).onDidBecomeIdle();
+
+    mapChangeEventManager.addOnDidBecomeIdleListener(onDidBecomeIdleListener);
+    Logger.setLoggerDefinition(loggerDefinition);
+    Exception exc = new RuntimeException();
+    doThrow(exc).when(onDidBecomeIdleListener).onDidBecomeIdle();
+    try {
+      mapChangeEventManager.onDidBecomeIdle();
+      Assert.fail("The exception should've been re-thrown.");
+    } catch (RuntimeException throwable) {
+      verify(loggerDefinition).e(anyString(), anyString(), eq(exc));
+    }
+
+    Error err = new ExecutionError("", new Error());
+    doThrow(err).when(onDidBecomeIdleListener).onDidBecomeIdle();
+    try {
+      mapChangeEventManager.onDidBecomeIdle();
+      Assert.fail("The exception should've been re-thrown.");
+    } catch (ExecutionError throwable) {
+      verify(loggerDefinition).e(anyString(), anyString(), eq(err));
+    }
   }
 
   @Test

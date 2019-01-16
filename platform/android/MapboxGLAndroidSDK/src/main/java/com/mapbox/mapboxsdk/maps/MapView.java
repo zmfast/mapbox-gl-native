@@ -96,6 +96,7 @@ public class MapView extends FrameLayout implements NativeMapView.ViewCallback {
   private MapKeyListener mapKeyListener;
   private MapZoomButtonController mapZoomButtonController;
   private Bundle savedInstanceState;
+  private boolean isActivated;
 
   @UiThread
   public MapView(@NonNull Context context) {
@@ -371,8 +372,11 @@ public class MapView extends FrameLayout implements NativeMapView.ViewCallback {
    */
   @UiThread
   public void onStart() {
-    ConnectivityReceiver.instance(getContext()).activate();
-    FileSource.getInstance(getContext()).activate();
+    if (!isActivated) {
+      ConnectivityReceiver.instance(getContext()).activate();
+      FileSource.getInstance(getContext()).activate();
+      isActivated = true;
+    }
     if (mapboxMap != null) {
       mapboxMap.onStart();
     }
@@ -417,8 +421,11 @@ public class MapView extends FrameLayout implements NativeMapView.ViewCallback {
       mapRenderer.onStop();
     }
 
-    ConnectivityReceiver.instance(getContext()).deactivate();
-    FileSource.getInstance(getContext()).deactivate();
+    if (isActivated) {
+      ConnectivityReceiver.instance(getContext()).deactivate();
+      FileSource.getInstance(getContext()).deactivate();
+      isActivated = false;
+    }
   }
 
   /**
@@ -851,11 +858,31 @@ public class MapView extends FrameLayout implements NativeMapView.ViewCallback {
   /**
    * Remove a callback that's invoked when the map has finished rendering.
    *
-   * @param listener The callback that's invoked when the map has finished rendering
+   * @param listener The callback that's invoked when the map has has finished rendering.
    */
   public void removeOnDidFinishRenderingMapListener(OnDidFinishRenderingMapListener listener) {
     mapChangeReceiver.removeOnDidFinishRenderingMapListener(listener);
   }
+
+  /**
+   * Set a callback that's invoked when the map has entered the idle state.
+   *
+   * @param listener The callback that's invoked when the map has entered the idle state.
+   */
+  public void addOnDidBecomeIdleListener(OnDidBecomeIdleListener listener) {
+    mapChangeReceiver.addOnDidBecomeIdleListener(listener);
+  }
+
+  /**
+   * Remove a callback that's invoked when the map has entered the idle state.
+   *
+   * @param listener The callback that's invoked when the map has entered the idle state.
+   */
+  public void removeOnDidBecomeIdleListener(OnDidBecomeIdleListener listener) {
+    mapChangeReceiver.removeOnDidBecomeIdleListener(listener);
+  }
+
+  /**
 
   /**
    * Set a callback that's invoked when the style has finished loading.
@@ -1028,6 +1055,19 @@ public class MapView extends FrameLayout implements NativeMapView.ViewCallback {
      * @param fully true if map is fully rendered, false if fully rendered
      */
     void onDidFinishRenderingMap(boolean fully);
+  }
+
+  /**
+   * Interface definition for a callback to be invoked when the map has entered the idle state.
+   * <p>
+   * {@link MapView#addOnDidBecomeIdleListener(OnDidBecomeIdleListener)}
+   * </p>
+   */
+  public interface OnDidBecomeIdleListener {
+    /**
+     * Called when the map has entered the idle state.
+     */
+    void onDidBecomeIdle();
   }
 
   /**

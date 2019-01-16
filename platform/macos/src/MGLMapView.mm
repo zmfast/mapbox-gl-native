@@ -928,6 +928,16 @@ public:
     }
 }
 
+- (void)mapViewDidBecomeIdle {
+    if (!_mbglMap) {
+        return;
+    }
+    
+    if ([self.delegate respondsToSelector:@selector(mapViewDidBecomeIdle)]) {
+        [self.delegate mapViewDidBecomeIdle:self];
+    }
+}
+
 - (void)mapViewDidFinishLoadingStyle {
     if (!_mbglMap) {
         return;
@@ -3011,6 +3021,10 @@ public:
     void onDidFinishRenderingMap(mbgl::MapObserver::RenderMode mode) override {
         bool fullyRendered = mode == mbgl::MapObserver::RenderMode::Full;
         [nativeView mapViewDidFinishRenderingMapFullyRendered:fullyRendered];
+    }
+    
+    void onDidBecomeIdle() override {
+        [nativeView mapViewDidBecomeIdle];
     }
 
     void onDidFinishLoadingStyle() override {

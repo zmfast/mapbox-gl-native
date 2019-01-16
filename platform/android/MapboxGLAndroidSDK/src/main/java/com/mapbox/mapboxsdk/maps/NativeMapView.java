@@ -993,6 +993,11 @@ final class NativeMapView {
   }
 
   @Keep
+  private void onDidBecomeIdle() {
+    stateCallback.onDidBecomeIdle();
+  }
+
+  @Keep
   private void onDidFinishLoadingStyle() {
     stateCallback.onDidFinishLoadingStyle();
     // deprecated API
@@ -1444,6 +1449,8 @@ final class NativeMapView {
     void onDidFinishRenderingMap(boolean fully);
 
     void onDidFinishLoadingStyle();
+
+    void onDidBecomeIdle();
 
     void onSourceChanged(String sourceId);
   }
