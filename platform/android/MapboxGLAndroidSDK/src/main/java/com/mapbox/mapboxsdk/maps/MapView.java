@@ -349,7 +349,7 @@ public class MapView extends FrameLayout implements NativeMapView.ViewCallback {
       isStarted = true;
     }
     if (mapboxMap != null) {
-      mapboxMap.onStart();
+      mapboxMap.onStart(hasSurface);
     }
 
     if (mapRenderer != null) {

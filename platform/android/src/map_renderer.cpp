@@ -3,6 +3,7 @@
 #include <mbgl/renderer/renderer.hpp>
 #include <mbgl/util/shared_thread_pool.hpp>
 #include <mbgl/util/run_loop.hpp>
+#include <mbgl/util/logging.hpp>
 
 #include <string>
 
@@ -122,7 +123,10 @@ void MapRenderer::scheduleSnapshot(std::unique_ptr<SnapshotCallback> callback) {
 }
 
 void MapRenderer::render(JNIEnv&) {
-    assert (renderer);
+    if (!renderer) {
+        Log::Error(Event::Android, "Skipping render, renderer not ready yet");
+        return;
+    }
 
     std::shared_ptr<UpdateParameters> params;
     {
