@@ -347,7 +347,8 @@ public class OfflineManager {
         getHandler().post(new Runnable() {
           @Override
           public void run() {
-            Logger.e("offline_test.db", "mergeOfflineDatabaseFiles#onError " +  (Looper.myLooper() == Looper.getMainLooper()));
+            Logger.e("offline_test.db", "mergeOfflineDatabaseFiles#onError "
+              +  (Looper.myLooper() == Looper.getMainLooper()));
             fileSource.deactivate();
             if (isTemporaryFile) {
               file.delete();
