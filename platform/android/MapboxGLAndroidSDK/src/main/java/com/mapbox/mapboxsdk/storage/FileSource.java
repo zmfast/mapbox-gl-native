@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.os.AsyncTask;
 import android.os.Environment;
+import android.os.Looper;
 import android.support.annotation.Keep;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -355,6 +356,7 @@ public class FileSource {
   private long nativePtr;
 
   private FileSource(String cachePath, AssetManager assetManager) {
+    Logger.e("offline_test.db", "FileSource constructor " +  (Looper.myLooper() == Looper.getMainLooper()));
     initialize(Mapbox.getAccessToken(), cachePath, assetManager);
   }
 

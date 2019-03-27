@@ -1,4 +1,5 @@
 apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android-extensions'
 apply plugin: "com.jaredsburrows.license"
 apply plugin: 'kotlin-android'
 
@@ -18,6 +19,7 @@ dependencies {
     testImplementation dependenciesList.mockk
     testImplementation dependenciesList.robolectric
     testImplementation dependenciesList.kotlinLib
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
 
 android {
@@ -171,3 +173,6 @@ apply from: "${rootDir}/gradle/gradle-update-vendor-modules.gradle"
 apply from: "${rootDir}/gradle/android-nitpick.gradle"
 apply from: "${rootDir}/gradle/gradle-bintray.gradle"
 apply from: "${rootDir}/gradle/jacoco-report.gradle"
+repositories {
+    mavenCentral()
+}

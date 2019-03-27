@@ -8,6 +8,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.mapbox.mapboxsdk.LibraryLoader;
 import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.log.Logger;
 import com.mapbox.mapboxsdk.storage.FileSource;
 
 import java.lang.annotation.Retention;
@@ -309,6 +310,7 @@ public class OfflineRegion {
     if (state == STATE_ACTIVE) {
       fileSource.activate();
     } else {
+      Logger.e("offline_test.db", "setDownloadState " +  (Looper.myLooper() == Looper.getMainLooper()));
       fileSource.deactivate();
     }
 
@@ -331,6 +333,7 @@ public class OfflineRegion {
         handler.post(new Runnable() {
           @Override
           public void run() {
+            Logger.e("offline_test.db", "getStatus " +  (Looper.myLooper() == Looper.getMainLooper()));
             FileSource.getInstance(Mapbox.getApplicationContext()).deactivate();
             callback.onStatus(status);
           }
@@ -342,6 +345,7 @@ public class OfflineRegion {
         handler.post(new Runnable() {
           @Override
           public void run() {
+            Logger.e("offline_test.db", "getStatus#onError " +  (Looper.myLooper() == Looper.getMainLooper()));
             FileSource.getInstance(Mapbox.getApplicationContext()).deactivate();
             callback.onError(error);
           }
@@ -377,6 +381,7 @@ public class OfflineRegion {
           handler.post(new Runnable() {
             @Override
             public void run() {
+              Logger.e("offline_test.db", "onDelete " +  (Looper.myLooper() == Looper.getMainLooper()));
               FileSource.getInstance(Mapbox.getApplicationContext()).deactivate();
               callback.onDelete();
               OfflineRegion.this.finalize();
@@ -390,6 +395,7 @@ public class OfflineRegion {
             @Override
             public void run() {
               isDeleted = false;
+              Logger.e("offline_test.db", "onDelete#onError " +  (Looper.myLooper() == Looper.getMainLooper()));
               FileSource.getInstance(Mapbox.getApplicationContext()).deactivate();
               callback.onError(error);
             }

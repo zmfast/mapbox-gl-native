@@ -1,8 +1,10 @@
 package com.mapbox.mapboxsdk.testapp.offline
 
 import android.content.Context
+import android.os.Looper
 import android.support.test.rule.ActivityTestRule
 import android.support.test.runner.AndroidJUnit4
+import com.mapbox.mapboxsdk.log.Logger
 import com.mapbox.mapboxsdk.offline.OfflineManager
 import com.mapbox.mapboxsdk.offline.OfflineRegion
 import com.mapbox.mapboxsdk.storage.FileSource
@@ -37,6 +39,7 @@ class OfflineManagerTest {
     rule.runOnUiThread {
       FileUtils.CopyFileFromAssetsTask(rule.activity, object : FileUtils.OnFileCopiedFromAssetsListener {
         override fun onFileCopiedFromAssets() {
+          Logger.e("offline_test.db", "onFileCopiedFromAssets " +  (Looper.myLooper() == Looper.getMainLooper()))
           latch.countDown()
         }
 
@@ -56,6 +59,7 @@ class OfflineManagerTest {
         FileSource.getResourcesCachePath(rule.activity) + "/" + TEST_DB_FILE_NAME,
         object : OfflineManager.MergeOfflineRegionsCallback {
           override fun onMerge(offlineRegions: Array<out OfflineRegion>?) {
+            Logger.e(TEST_DB_FILE_NAME, "onMerge " +  (Looper.myLooper() == Looper.getMainLooper()))
             assert(offlineRegions?.size == 1)
             latch.countDown()
           }
@@ -74,6 +78,7 @@ class OfflineManagerTest {
     rule.runOnUiThread {
       OfflineManager.getInstance(context).listOfflineRegions(object : OfflineManager.ListOfflineRegionsCallback {
         override fun onList(offlineRegions: Array<out OfflineRegion>?) {
+          Logger.e(TEST_DB_FILE_NAME, "onList " +  (Looper.myLooper() == Looper.getMainLooper()))
           assert(offlineRegions?.size == 1)
           mergedRegion = offlineRegions!![0]
           latch.countDown()
@@ -93,6 +98,7 @@ class OfflineManagerTest {
     rule.runOnUiThread {
       mergedRegion.delete(object : OfflineRegion.OfflineRegionDeleteCallback {
         override fun onDelete() {
+          Logger.e(TEST_DB_FILE_NAME, "delete " +  (Looper.myLooper() == Looper.getMainLooper()))
           latch.countDown()
         }
 

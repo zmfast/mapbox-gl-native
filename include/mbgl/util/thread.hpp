@@ -15,6 +15,8 @@
 #include <string>
 #include <thread>
 #include <utility>
+#include <sstream>
+#include "logging.hpp"
 
 namespace mbgl {
 namespace util {
@@ -104,6 +106,17 @@ public:
     // sent to a paused `Object` will be queued and only processed after
     // `resume()` is called.
     void pause() {
+        auto myid = std::this_thread::get_id();
+        std::stringstream ss;
+        ss << myid;
+        std::string mystring = ss.str();
+
+        auto myid2 = tid;
+        std::stringstream ss2;
+        ss2 << myid2;
+        std::string mystring2 = ss2.str();
+
+        Log::Error(Event::Android, "Hello world "+ mystring + " , while " + mystring2);
         MBGL_VERIFY_THREAD(tid);
 
         assert(!paused);

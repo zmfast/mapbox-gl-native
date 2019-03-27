@@ -12,6 +12,7 @@ import com.mapbox.mapboxsdk.LibraryLoader;
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.R;
 import com.mapbox.mapboxsdk.geometry.LatLngBounds;
+import com.mapbox.mapboxsdk.log.Logger;
 import com.mapbox.mapboxsdk.maps.TelemetryDefinition;
 import com.mapbox.mapboxsdk.net.ConnectivityReceiver;
 import com.mapbox.mapboxsdk.storage.FileSource;
@@ -182,6 +183,7 @@ public class OfflineManager {
         getHandler().post(new Runnable() {
           @Override
           public void run() {
+            Logger.e("offline_test.db", "#listOfflineRegions " +  (Looper.myLooper() == Looper.getMainLooper()));
             fileSource.deactivate();
             callback.onList(offlineRegions);
           }
@@ -193,6 +195,7 @@ public class OfflineManager {
         getHandler().post(new Runnable() {
           @Override
           public void run() {
+            Logger.e("offline_test.db", "#listOfflineRegions#onError " +  (Looper.myLooper() == Looper.getMainLooper()));
             fileSource.deactivate();
             callback.onError(error);
           }
@@ -327,6 +330,7 @@ public class OfflineManager {
         getHandler().post(new Runnable() {
           @Override
           public void run() {
+            Logger.e("offline_test.db", "mergeOfflineDatabaseFiles " +  (Looper.myLooper() == Looper.getMainLooper()));
             fileSource.deactivate();
             if (isTemporaryFile) {
               file.delete();
@@ -341,6 +345,7 @@ public class OfflineManager {
         getHandler().post(new Runnable() {
           @Override
           public void run() {
+            Logger.e("offline_test.db", "mergeOfflineDatabaseFiles#onError " +  (Looper.myLooper() == Looper.getMainLooper()));
             fileSource.deactivate();
             if (isTemporaryFile) {
               file.delete();
@@ -387,6 +392,7 @@ public class OfflineManager {
         getHandler().post(new Runnable() {
           @Override
           public void run() {
+            Logger.e("offline_test.db", "onCreate " +  (Looper.myLooper() == Looper.getMainLooper()));
             ConnectivityReceiver.instance(context).deactivate();
             FileSource.getInstance(context).deactivate();
             callback.onCreate(offlineRegion);
@@ -399,6 +405,7 @@ public class OfflineManager {
         getHandler().post(new Runnable() {
           @Override
           public void run() {
+            Logger.e("offline_test.db", "onCreate#onError " +  (Looper.myLooper() == Looper.getMainLooper()));
             ConnectivityReceiver.instance(context).deactivate();
             FileSource.getInstance(context).deactivate();
             callback.onError(error);
