@@ -183,7 +183,8 @@ public class OfflineManager {
         getHandler().post(new Runnable() {
           @Override
           public void run() {
-            Logger.e("offline_test.db", "#listOfflineRegions " +  (Looper.myLooper() == Looper.getMainLooper()));
+            Logger.e("offline_test.db", "#listOfflineRegions "
+              +  (Looper.myLooper() == Looper.getMainLooper()));
             fileSource.deactivate();
             callback.onList(offlineRegions);
           }
@@ -195,7 +196,8 @@ public class OfflineManager {
         getHandler().post(new Runnable() {
           @Override
           public void run() {
-            Logger.e("offline_test.db", "#listOfflineRegions#onError " +  (Looper.myLooper() == Looper.getMainLooper()));
+            Logger.e("offline_test.db", "#listOfflineRegions#onError "
+              +  (Looper.myLooper() == Looper.getMainLooper()));
             fileSource.deactivate();
             callback.onError(error);
           }
