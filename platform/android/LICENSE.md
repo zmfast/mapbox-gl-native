@@ -94,6 +94,12 @@ License: [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt)
 
 ===========================================================================
 
+Mapbox GL uses portions of the IntelliJ IDEA Annotations.  
+URL: [http://www.jetbrains.org](http://www.jetbrains.org)  
+License: [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt)
+
+===========================================================================
+
 Mapbox GL uses portions of the Mapbox Android Core Library.  
 URL: [https://github.com/mapbox/mapbox-events-android](https://github.com/mapbox/mapbox-events-android)  
 License: [The Apache Software License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt)
@@ -142,6 +148,24 @@ License: [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt)
 
 Mapbox GL uses portions of the Okio.  
 License: [Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt)
+
+===========================================================================
+
+Mapbox GL uses portions of the Org.jetbrains.kotlin:kotlin-stdlib.  
+URL: [https://kotlinlang.org/](https://kotlinlang.org/)  
+License: [The Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt)
+
+===========================================================================
+
+Mapbox GL uses portions of the Org.jetbrains.kotlin:kotlin-stdlib-common.  
+URL: [https://kotlinlang.org/](https://kotlinlang.org/)  
+License: [The Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt)
+
+===========================================================================
+
+Mapbox GL uses portions of the Org.jetbrains.kotlin:kotlin-stdlib-jdk7.  
+URL: [https://kotlinlang.org/](https://kotlinlang.org/)  
+License: [The Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0.txt)
 
 ===========================================================================
 
