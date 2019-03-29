@@ -35,94 +35,28 @@ public class ManualLocationUpdatesActivity extends AppCompatActivity implements 
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_location_manual_update);
-
-    locationEngine = LocationEngineProvider.getBestLocationEngine(this, false);
-
-    FloatingActionButton fabManualUpdate = findViewById(R.id.fabManualLocationChange);
-    fabManualUpdate.setOnClickListener(v -> {
-      if (locationComponent != null && locationComponent.getLocationEngine() == null) {
-        locationComponent.forceLocationUpdate(
-          Utils.getRandomLocation(LatLngBounds.from(60, 25, 40, -5)));
-      }
-    });
-    fabManualUpdate.setEnabled(false);
-
-    FloatingActionButton fabToggle = findViewById(R.id.fabToggleManualLocation);
-    fabToggle.setOnClickListener(v -> {
-      if (locationComponent != null) {
-        locationComponent.setLocationEngine(locationComponent.getLocationEngine() == null ? locationEngine : null);
-
-        if (locationComponent.getLocationEngine() == null) {
-          fabToggle.setImageResource(R.drawable.ic_layers_clear);
-          fabManualUpdate.setEnabled(true);
-          fabManualUpdate.setAlpha(1f);
-          Toast.makeText(
-            ManualLocationUpdatesActivity.this.getApplicationContext(),
-            "LocationEngine disabled, use manual updates",
-            Toast.LENGTH_SHORT).show();
-        } else {
-          fabToggle.setImageResource(R.drawable.ic_layers);
-          fabManualUpdate.setEnabled(false);
-          fabManualUpdate.setAlpha(0.5f);
-          Toast.makeText(
-            ManualLocationUpdatesActivity.this.getApplicationContext(),
-            "LocationEngine enabled",
-            Toast.LENGTH_SHORT).show();
-        }
-      }
-    });
-
     mapView = findViewById(R.id.mapView);
     mapView.onCreate(savedInstanceState);
-
-    if (PermissionsManager.areLocationPermissionsGranted(this)) {
-      mapView.getMapAsync(this);
-    } else {
-      permissionsManager = new PermissionsManager(new PermissionsListener() {
-        @Override
-        public void onExplanationNeeded(List<String> permissionsToExplain) {
-          Toast.makeText(ManualLocationUpdatesActivity.this.getApplicationContext(),
-            "You need to accept location permissions.",
-            Toast.LENGTH_SHORT
-          ).show();
-        }
-
-        @Override
-        public void onPermissionResult(boolean granted) {
-          if (granted) {
-            mapView.getMapAsync(ManualLocationUpdatesActivity.this);
-          } else {
-            finish();
-          }
-        }
-      });
-      permissionsManager.requestLocationPermissions(this);
-    }
-  }
-
-  @Override
-  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-    permissionsManager.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    mapView.getMapAsync(this);
   }
 
   @SuppressLint("MissingPermission")
   @Override
   public void onMapReady(@NonNull MapboxMap mapboxMap) {
     mapboxMap.setStyle(new Style.Builder().fromUrl(Style.MAPBOX_STREETS), style -> {
-      locationComponent = mapboxMap.getLocationComponent();
-
-      locationComponent.activateLocationComponent(
-        LocationComponentActivationOptions
-          .builder(this, style)
-          .locationEngine(locationEngine)
-          .locationEngineRequest(new LocationEngineRequest.Builder(500)
-            .setFastestInterval(500)
-            .setPriority(LocationEngineRequest.PRIORITY_HIGH_ACCURACY).build())
-          .build());
-
-      locationComponent.setLocationComponentEnabled(true);
-      locationComponent.setRenderMode(RenderMode.COMPASS);
+//      locationComponent = mapboxMap.getLocationComponent();
+//
+//      locationComponent.activateLocationComponent(
+//        LocationComponentActivationOptions
+//          .builder(this, style)
+//          .locationEngine(locationEngine)
+//          .locationEngineRequest(new LocationEngineRequest.Builder(500)
+//            .setFastestInterval(500)
+//            .setPriority(LocationEngineRequest.PRIORITY_HIGH_ACCURACY).build())
+//          .build());
+//
+//      locationComponent.setLocationComponentEnabled(true);
+//      locationComponent.setRenderMode(RenderMode.COMPASS);
     });
   }
 
