@@ -32,6 +32,7 @@
     <string name="activity_viewpager">ViewPager</string>
     <string name="activity_runtime_style">Runtime Style</string>
     <string name="activity_gradient_line">Gradient line layer</string>
+    <string name="activity_line">Line layer</string>
     <string name="activity_data_driven_style">Data Driven Style</string>
     <string name="activity_circle_layer">Circle layer</string>
     <string name="activity_style_file">Local Style file</string>
