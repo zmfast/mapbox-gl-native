@@ -4,6 +4,13 @@ Mapbox welcomes participation and contributions from everyone. Please read [CONT
 
 ## 4.12.0
 
+* Added variants of several animated `MGLMapView` methods that accept completion handlers ([#14381](https://github.com/mapbox/mapbox-gl-native/pull/14381)):
+  * `-[MGLMapView setVisibleCoordinateBounds:edgePadding:animated:completionHandler:]`
+  * `-[MGLMapView setContentInset:animated:completionHandler:]`
+  * `-[MGLMapView setUserTrackingMode:animated:completionHandler:]`
+  * `-[MGLMapView setTargetCoordinate:animated:completionHandler:]`
+  * `-[MGLMapView showAnnotations:edgePadding:animated:completionHandler:]`
+  * `-[MGLMapView selectAnnotation:animated:completionHandler:]`
 * Fixed an issue where `-[MGLMapView setVisibleCoordinates:count:edgePadding:direction:duration:animationTimingFunction:completionHandler:]` interpreted a negative `direction` as due north instead of maintaining the current direction. ([#14575](https://github.com/mapbox/mapbox-gl-native/pull/14575)) 
 
 ## 4.11.0
