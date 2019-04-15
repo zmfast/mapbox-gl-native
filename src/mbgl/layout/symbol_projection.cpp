@@ -47,7 +47,7 @@ namespace mbgl {
 	 * For horizontal labels we want to do step 1 in the shader for performance reasons (no cpu work).
 	 *      This is what `u_label_plane_matrix` is used for.
 	 * For labels aligned with lines we have to steps 1 and 2 on the cpu since we need access to the line geometry.
-	 *      This is what `updateLineLabels(...)` does.
+	 *      This is what `updateLineLabels(...)` in JS, `reprojectLineLabels()` in gl-native, does.
 	 *      Since the conversion is handled on the cpu we just set `u_label_plane_matrix` to an identity matrix.
 	 *
 	 * Steps 3 and 4 are done in the shaders for all labels.
@@ -401,7 +401,9 @@ namespace mbgl {
                 continue;
             }
 
-            const float cameraToAnchorDistance = anchorPos[3];
+            const double viewportZoomCorrection = pitchWithMap ? 1.0 / state.getViewport().scale : 1.0;
+            
+            const float cameraToAnchorDistance = anchorPos[3] * viewportZoomCorrection; // TODO(astojilj): explanation
             const float perspectiveRatio = 0.5 + 0.5 * (cameraToAnchorDistance / state.getCameraToCenterDistance());
 
             const float fontSize = evaluateSizeForFeature(partiallyEvaluatedSize, placedSymbol);

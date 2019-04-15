@@ -83,7 +83,6 @@ TEST(Transform, IntegerZoom) {
         transform.jumpTo(CameraOptions().withZoom(zoom));
         ASSERT_NEAR(transform.getZoom(), zoom, 1e-8);
         ASSERT_EQ(transform.getState().getIntegerZoom(), zoomInt);
-        ASSERT_NEAR(transform.getState().getZoomFraction(), zoom - zoomInt, 1e-8);
     };
 
     for (uint8_t zoomInt = 0; zoomInt < 20; ++zoomInt) {
@@ -288,25 +287,35 @@ TEST(Transform, Padding) {
 
     ASSERT_DOUBLE_EQ(0, transform.getLatLng().latitude());
     ASSERT_DOUBLE_EQ(0, transform.getLatLng().longitude());
-
-    transform.jumpTo(CameraOptions().withCenter(LatLng { 10, -100 }).withZoom(10.0));
+    CameraOptions nonPaddedCameraOptions = CameraOptions().withCenter(LatLng { 10, -100 }).withZoom(10.0);
+    transform.jumpTo(nonPaddedCameraOptions);
 
     const LatLng trueCenter = transform.getLatLng();
     ASSERT_DOUBLE_EQ(10, trueCenter.latitude());
     ASSERT_DOUBLE_EQ(-100, trueCenter.longitude());
     ASSERT_DOUBLE_EQ(10, transform.getZoom());
 
-    const LatLng manualShiftedCenter = transform.getState().screenCoordinateToLatLng({
+    const LatLng screenCenter = transform.screenCoordinateToLatLng({
         1000.0 / 2.0,
-        1000.0 / 4.0,
+        1000.0 / 2.0,
     });
 
     EdgeInsets padding(1000.0 / 2.0, 0, 0, 0);
-    const LatLng shiftedCenter = transform.getLatLng(padding);
-    ASSERT_NE(trueCenter.latitude(), shiftedCenter.latitude());
-    ASSERT_NEAR(trueCenter.longitude(), shiftedCenter.longitude(), 1e-8);
-    ASSERT_DOUBLE_EQ(manualShiftedCenter.latitude(), shiftedCenter.latitude());
-    ASSERT_DOUBLE_EQ(manualShiftedCenter.longitude(), shiftedCenter.longitude());
+    // CameraOption center and zoom don't change when padding changes: center of
+    // viewport remains the same as padding defines viwport center offset in rendering.
+    CameraOptions paddedOptions = CameraOptions().withPadding(padding);
+    transform.jumpTo(paddedOptions);
+    const LatLng theSameCenter = transform.getLatLng();
+    ASSERT_DOUBLE_EQ(trueCenter.latitude(), theSameCenter.latitude());
+    ASSERT_DOUBLE_EQ(trueCenter.longitude(), theSameCenter.longitude());
+
+    const LatLng paddedLowerHalfScreenCenter = transform.screenCoordinateToLatLng({
+        1000.0 / 2.0,
+        1000.0 * 0.75,
+    });
+
+    ASSERT_NEAR(screenCenter.latitude(), paddedLowerHalfScreenCenter.latitude(), 1e-10);
+    ASSERT_NEAR(screenCenter.longitude(), paddedLowerHalfScreenCenter.longitude(), 1e-10);
 }
 
 TEST(Transform, MoveBy) {
@@ -440,7 +449,7 @@ TEST(Transform, Camera) {
     flyOptions.transitionFrameFn = [&](double t) {
         ASSERT_TRUE(t >= 0 && t <= 1);
         ASSERT_LE(latLng2.latitude(), transform.getLatLng().latitude());
-        ASSERT_GE(latLng2.longitude(), transform.getLatLng({}, LatLng::Unwrapped).longitude());
+        ASSERT_GE(latLng2.longitude(), transform.getLatLng(LatLng::Unwrapped).longitude());
     };
     flyOptions.transitionFinishFn = [&]() {
         // XXX Fix precision loss in flyTo:
@@ -618,7 +627,7 @@ TEST(Transform, LatLngBounds) {
 
     // Try crossing the antimeridian from the right.
     transform.jumpTo(CameraOptions().withCenter(LatLng { 0.0, 200.0 }));
-    ASSERT_DOUBLE_EQ(transform.getLatLng({}, LatLng::Unwrapped).longitude(), 180.0);
+    ASSERT_DOUBLE_EQ(transform.getLatLng(LatLng::Unwrapped).longitude(), 180.0);
     ASSERT_DOUBLE_EQ(transform.getLatLng().longitude(), -180.0);
 
     //    -1   |   0   |  +1

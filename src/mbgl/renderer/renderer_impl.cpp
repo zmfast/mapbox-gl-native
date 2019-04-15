@@ -418,6 +418,12 @@ void Renderer::Impl::render(const UpdateParameters& updateParameters) {
             color = backgroundColor;
         }
         parameters.renderPass = parameters.encoder->createRenderPass("main buffer", { parameters.backend.getDefaultRenderable(), color, 1, 0 });
+
+        auto viewport = parameters.state.getViewport();
+        // TransformState::Viewport is with top left origin: transform it to bottom left.
+        double bottomLeftOriginY = parameters.state.getSize().height - viewport.height - viewport.y;
+        parameters.encoder->setViewport(viewport.x * pixelRatio, bottomLeftOriginY * pixelRatio,
+                                        viewport.width * pixelRatio, viewport.height * pixelRatio);
     }
 
     // Actually render the layers

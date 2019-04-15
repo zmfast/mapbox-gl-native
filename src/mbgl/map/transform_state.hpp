@@ -20,7 +20,6 @@ class UnwrappedTileID;
 
 class TransformState {
     friend class Transform;
-    friend class RendererState;
 
 public:
     TransformState(ConstrainMode = ConstrainMode::HeightOnly, ViewportMode = ViewportMode::Default);
@@ -52,7 +51,6 @@ public:
     // Zoom
     double getZoom() const;
     uint8_t getIntegerZoom() const;
-    double getZoomFraction() const;
 
     // Bounds
     void setLatLngBounds(LatLngBounds);
@@ -61,6 +59,18 @@ public:
     double getMinZoom() const;
     void setMaxZoom(double);
     double getMaxZoom() const;
+
+    // Enlarged and offsetted viewport's left, top, width and height in logical
+    // coordinates.
+    struct Viewport {
+        double x;
+        double y;
+        double width;
+        double height;
+        double scale;
+    };
+
+    const Viewport& getViewport() const;
 
     // Rotation
     float getBearing() const;
@@ -104,7 +114,7 @@ private:
     // logical dimensions
     Size size;
 
-    mat4 coordinatePointMatrix(double z) const;
+    mat4 coordinatePointMatrix() const;
     mat4 getPixelMatrix() const;
 
     /** Recenter the map so that the given coordinate is located at the given
@@ -136,6 +146,9 @@ private:
     double xSkew = 0.0;
     double ySkew = 1.0;
     bool axonometric = false;
+
+    EdgeInsets edgeInsets;
+    Viewport viewport;
 
     // cache values for spherical mercator math
     double Bc = Projection::worldSize(scale) / util::DEGREES_MAX;

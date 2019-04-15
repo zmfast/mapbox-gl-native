@@ -66,7 +66,7 @@ Values makeValues(const bool isText,
     const bool pitchWithMap = values.pitchAlignment == style::AlignmentType::Map;
     const bool rotateWithMap = values.rotationAlignment == style::AlignmentType::Map;
 
-    // Line label rotation happens in `updateLineLabels`
+    // Line label rotation happens in `updateLineLabels`/`reprojectLineLabels``
     // Pitched point labels are automatically rotated by the labelPlaneMatrix projection
     // Unpitched point labels need to have their rotation applied after projection
     const bool rotateInShader = rotateWithMap && !pitchWithMap && !alongLine;
@@ -82,6 +82,8 @@ Values makeValues(const bool isText,
 
     mat4 glCoordMatrix = getGlCoordMatrix(tile.matrix, pitchWithMap, rotateWithMap, state, pixelsToTileUnits);
 
+    const double viewportZoomCorrection = pitchWithMap ? 1.0 / state.getViewport().scale
+                                                       : state.getViewport().scale;
     return Values {
         uniforms::matrix::Value( tile.translatedMatrix(values.translate,
                                    values.translateAnchor,
@@ -96,7 +98,8 @@ Values makeValues(const bool isText,
         uniforms::texsize::Value( texsize ),
         uniforms::fade_change::Value( symbolFadeChange ),
         uniforms::is_text::Value( isText ),
-        uniforms::camera_to_center_distance::Value( state.getCameraToCenterDistance() ),
+        // uniforms::camera_to_center_distance::Value( state.getCameraToCenterDistance() ),
+        uniforms::camera_to_center_distance::Value( state.getCameraToCenterDistance() / viewportZoomCorrection ),
         uniforms::pitch::Value( state.getPitch() ),
         uniforms::pitch_with_map::Value( pitchWithMap ),
         uniforms::rotate_symbol::Value( rotateInShader ),
@@ -141,9 +144,9 @@ SymbolSDFProgram<Name, PaintProperties>::layoutUniformValues(const bool isText,
                                                        const TransformState& state,
                                                        const float symbolFadeChange,
                                                        const SymbolSDFPart part) {
-    const float gammaScale = (values.pitchAlignment == AlignmentType::Map
-                              ? std::cos(state.getPitch()) * state.getCameraToCenterDistance()
-                              : 1.0);
+    const float gammaScale = values.pitchAlignment == AlignmentType::Map
+                              ? std::cos(state.getPitch()) * state.getCameraToCenterDistance() * state.getViewport().scale
+                              : 1;
 
     return makeValues<SymbolSDFProgram<Name, PaintProperties>::LayoutUniformValues>(
         isText,
