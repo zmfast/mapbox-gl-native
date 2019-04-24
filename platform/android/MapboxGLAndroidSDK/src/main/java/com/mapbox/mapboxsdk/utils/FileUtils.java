@@ -6,7 +6,6 @@ import android.support.annotation.NonNull;
 import com.mapbox.mapboxsdk.log.Logger;
 
 import java.io.File;
-import java.lang.ref.WeakReference;
 
 public class FileUtils {
 
@@ -17,10 +16,10 @@ public class FileUtils {
    */
   public static class CheckFileReadPermissionTask extends AsyncTask<File, Void, Boolean> {
     @NonNull
-    private final WeakReference<OnCheckFileReadPermissionListener> listenerWeakReference;
+    private OnCheckFileReadPermissionListener listenerWeakReference;
 
     public CheckFileReadPermissionTask(OnCheckFileReadPermissionListener listener) {
-      this.listenerWeakReference = new WeakReference<>(listener);
+      this.listenerWeakReference = listener;
     }
 
     @Override
@@ -34,7 +33,7 @@ public class FileUtils {
 
     @Override
     protected void onCancelled() {
-      OnCheckFileReadPermissionListener listener = listenerWeakReference.get();
+      OnCheckFileReadPermissionListener listener = listenerWeakReference;
       if (listener != null) {
         listener.onError();
       }
@@ -42,7 +41,7 @@ public class FileUtils {
 
     @Override
     protected void onPostExecute(Boolean result) {
-      OnCheckFileReadPermissionListener listener = listenerWeakReference.get();
+      OnCheckFileReadPermissionListener listener = listenerWeakReference;
       if (listener != null) {
         if (result) {
           listener.onReadPermissionGranted();
@@ -74,10 +73,10 @@ public class FileUtils {
    */
   public static class CheckFileWritePermissionTask extends AsyncTask<File, Void, Boolean> {
     @NonNull
-    private final WeakReference<OnCheckFileWritePermissionListener> listenerWeakReference;
+    private final OnCheckFileWritePermissionListener listenerWeakReference;
 
     public CheckFileWritePermissionTask(OnCheckFileWritePermissionListener listener) {
-      this.listenerWeakReference = new WeakReference<>(listener);
+      this.listenerWeakReference = listener;
     }
 
     @Override
@@ -91,7 +90,7 @@ public class FileUtils {
 
     @Override
     protected void onCancelled() {
-      OnCheckFileWritePermissionListener listener = listenerWeakReference.get();
+      OnCheckFileWritePermissionListener listener = listenerWeakReference;
       if (listener != null) {
         listener.onError();
       }
@@ -99,7 +98,7 @@ public class FileUtils {
 
     @Override
     protected void onPostExecute(Boolean result) {
-      OnCheckFileWritePermissionListener listener = listenerWeakReference.get();
+      OnCheckFileWritePermissionListener listener = listenerWeakReference;
       if (listener != null) {
         if (result) {
           listener.onWritePermissionGranted();

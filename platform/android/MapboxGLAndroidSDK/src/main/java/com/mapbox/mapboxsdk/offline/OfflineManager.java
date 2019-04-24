@@ -225,7 +225,7 @@ public class OfflineManager {
    */
   public void mergeOfflineRegions(@NonNull String path, @NonNull final MergeOfflineRegionsCallback callback) {
     final File src = new File(path);
-    new FileUtils.CheckFileReadPermissionTask(new FileUtils.OnCheckFileReadPermissionListener() {
+    final FileUtils.OnCheckFileReadPermissionListener fileReadPermissionListener = new FileUtils.OnCheckFileReadPermissionListener() {
       @Override
       public void onReadPermissionGranted() {
         new FileUtils.CheckFileWritePermissionTask(new FileUtils.OnCheckFileWritePermissionListener() {
@@ -250,7 +250,8 @@ public class OfflineManager {
         // path not readable, abort
         callback.onError("Secondary database needs to be located in a readable path.");
       }
-    }).execute(src);
+    };
+    new FileUtils.CheckFileReadPermissionTask(fileReadPermissionListener).execute(src);
   }
 
   private static final class CopyTempDatabaseFileTask extends AsyncTask<Object, Void, Object> {
