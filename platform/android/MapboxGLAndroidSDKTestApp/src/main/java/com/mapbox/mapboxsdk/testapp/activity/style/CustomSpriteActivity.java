@@ -56,6 +56,7 @@ public class CustomSpriteActivity extends AppCompatActivity {
         for (int i = 0; i < latLngs.length; i++) {
           JsonObject jsonObject = new JsonObject();
           jsonObject.addProperty("title", String.valueOf(i));
+          jsonObject.addProperty("id", i);
           featureList.add(Feature.fromGeometry(Point.fromLngLat(latLngs[i].getLongitude(), latLngs[i].getLatitude()), jsonObject));
         }
 
@@ -72,7 +73,7 @@ public class CustomSpriteActivity extends AppCompatActivity {
             iconIgnorePlacement(true),
             textIgnorePlacement(true),
             textPadding(4.0f),
-            symbolSortKey(5.0f),
+            symbolSortKey(Expression.get("id")),
             textField(Expression.get("title")),
             iconImage("ic_launcher_round")
           )
