@@ -1,9 +1,16 @@
 package com.mapbox.mapboxsdk.testapp.activity.maplayout;
 
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
+
+import com.mapbox.mapboxsdk.camera.CameraPosition;
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
+import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
+import com.mapbox.mapboxsdk.maps.MapboxMap;
+import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Style;
 import com.mapbox.mapboxsdk.testapp.R;
 import com.mapbox.mapboxsdk.testapp.utils.NavUtils;
@@ -21,9 +28,33 @@ public class SimpleMapActivity extends AppCompatActivity {
     setContentView(R.layout.activity_map_simple);
     mapView = findViewById(R.id.mapView);
     mapView.onCreate(savedInstanceState);
-    mapView.getMapAsync(mapboxMap -> mapboxMap.setStyle(
-      new Style.Builder().fromUrl(Style.MAPBOX_STREETS)
-    ));
+    mapView.getMapAsync(mapboxMap -> {
+      mapboxMap.moveCamera(
+        CameraUpdateFactory.newCameraPosition(
+          new CameraPosition.Builder()
+            .target(new LatLng(40.723102, -73.9979))
+            .zoom(11)
+            .bearing(0)
+            .tilt(0)
+            .build())
+      );
+
+      mapboxMap.addOnMapClickListener(point -> {
+        mapboxMap.moveCamera(
+          CameraUpdateFactory.newCameraPosition(
+            new CameraPosition.Builder()
+              .target(new LatLng(40.723102, -73.9979))
+              .zoom(12.32962965965271)
+              .bearing(24.598148703575134)
+              .tilt(19.94444465637207)
+              .build())
+        );
+        return false;
+      });
+      mapboxMap.setStyle(
+        new Style.Builder().fromUrl(Style.MAPBOX_STREETS)
+      );
+    });
   }
 
   @Override
