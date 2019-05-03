@@ -85,13 +85,13 @@ Contact: Txus Ballesteros <txus.ballesteros@gmail.com>
         android:id="@+id/title"
         android:layout_above="@+id/subtitle"
         android:text="FOO bar"
-        app:view_behavior="com.nurbot.mapwallpaper.demo.ParallaxTitleBehaviour" />
+        app:view_behavior="com.mapbox.mapboxsdk.testapp.activity.maplayout.demo.ParallaxTitleBehaviour" />
 
     <TextView
         style="@style/text_subtitle"
         android:id="@+id/subtitle"
         android:layout_alignParentBottom="true"
         android:text="Bar foo"
-        app:view_behavior="com.nurbot.mapwallpaper.demo.ParallaxSubtitleBehaviour" />
+        app:view_behavior="com.mapbox.mapboxsdk.testapp.activity.maplayout.demo.ParallaxSubtitleBehaviour" />
 
 </com.redbooth.WelcomePageLayout>

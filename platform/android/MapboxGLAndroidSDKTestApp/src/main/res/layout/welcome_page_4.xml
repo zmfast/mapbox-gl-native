@@ -25,11 +25,11 @@ Contact: Txus Ballesteros <txus.ballesteros@gmail.com>
     style="@style/welcome_page"
     tools:background="@color/page1">
 
-    <com.nurbot.mapwallpaper.demo.RectangleWithCapCircleView
+    <com.mapbox.mapboxsdk.testapp.activity.maplayout.demo.RectangleWithCapCircleView
         android:id="@+id/semicircle_page4"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:view_behavior="com.nurbot.mapwallpaper.demo.AnimationFillWithColor" />
+        app:view_behavior="com.mapbox.mapboxsdk.testapp.activity.maplayout.demo.AnimationFillWithColor" />
 
     <ImageView
         android:id="@+id/rocket_page4"

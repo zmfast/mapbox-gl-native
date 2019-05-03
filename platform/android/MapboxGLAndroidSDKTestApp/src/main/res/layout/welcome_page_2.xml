@@ -102,7 +102,7 @@ Contact: Txus Ballesteros <txus.ballesteros@gmail.com>
         android:layout_marginTop="10dp"
         android:layout_marginRight="20dp"
         android:visibility="invisible"
-        app:view_behavior="com.nurbot.mapwallpaper.demo.AnimationFlightTo"
+        app:view_behavior="com.mapbox.mapboxsdk.testapp.activity.maplayout.demo.AnimationFlightTo"
         app:destiny="@+id/android_destiny">
 
         <ImageView
@@ -140,13 +140,13 @@ Contact: Txus Ballesteros <txus.ballesteros@gmail.com>
         android:id="@+id/title"
         android:layout_above="@+id/subtitle"
         android:text="Foo Bar"
-        app:view_behavior="com.nurbot.mapwallpaper.demo.ParallaxTitleBehaviour" />
+        app:view_behavior="com.mapbox.mapboxsdk.testapp.activity.maplayout.demo.ParallaxTitleBehaviour" />
 
     <TextView
         style="@style/text_subtitle"
         android:id="@+id/subtitle"
         android:layout_alignParentBottom="true"
         android:text="Lorem ipsum,\nfoo bar bar foo."
-        app:view_behavior="com.nurbot.mapwallpaper.demo.ParallaxSubtitleBehaviour" />
+        app:view_behavior="com.mapbox.mapboxsdk.testapp.activity.maplayout.demo.ParallaxSubtitleBehaviour" />
 
 </com.redbooth.WelcomePageLayout>
