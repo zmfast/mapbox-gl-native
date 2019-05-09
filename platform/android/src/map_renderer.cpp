@@ -35,7 +35,7 @@ void MapRenderer::reset() {
     if (renderer) {
         // Make sure to destroy the renderer on the GL Thread
         auto self = ActorRef<MapRenderer>(*this, mailbox);
-        self.ask(&MapRenderer::resetRenderer).wait();
+        self.ask(&MapRenderer::resetRenderer);
     }
 
     // Lock to make sure there is no concurrent initialisation on the gl thread
