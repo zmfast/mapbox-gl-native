@@ -26,12 +26,14 @@ class DownloadRegionActivity : AppCompatActivity(), OfflineRegion.OfflineRegionO
 
   companion object {
     const val STATUS_UPDATE_TIMEOUT_MS = 10_000L
+    const val PAUSE_THRESHOLD = 66_000L
   }
 
   private val handler: Handler = Handler()
   private lateinit var offlineManager: OfflineManager
   private var offlineRegion: OfflineRegion? = null
   private var downloading = false
+  private var pauseOnce = false
   private var previousCompletedResourceCount: Long = 0
   private var previousUpdateTimestamp: Long = 0
 
@@ -125,6 +127,9 @@ class DownloadRegionActivity : AppCompatActivity(), OfflineRegion.OfflineRegionO
       logMessage(it)
       download_status.text = it
     }
+
+    // restart download after being paused
+    handler.postDelayed({ startDownload(region) }, 3000)
   }
 
   override fun onStatusChanged(status: OfflineRegionStatus) {
@@ -147,6 +152,11 @@ class DownloadRegionActivity : AppCompatActivity(), OfflineRegion.OfflineRegionO
       if (status.completedResourceCount > status.requiredResourceCount &&
         previousCompletedResourceCount <= status.requiredResourceCount) {
         logMessage("FAILURE! Completed > required")
+      }
+
+      if (!pauseOnce && previousCompletedResourceCount < PAUSE_THRESHOLD && status.completedResourceCount >= PAUSE_THRESHOLD) {
+        pauseOnce = true
+        offlineRegion?.let { pauseDownload(it) }
       }
     }
 
