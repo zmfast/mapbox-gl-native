@@ -1,12 +1,22 @@
 package com.mapbox.mapboxsdk.testapp.activity.maplayout;
 
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
+import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
+import com.mapbox.mapboxsdk.maps.MapboxMap;
+import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Style;
+import com.mapbox.mapboxsdk.style.layers.SymbolLayer;
 import com.mapbox.mapboxsdk.testapp.R;
 import com.mapbox.mapboxsdk.testapp.utils.NavUtils;
+
+import static com.mapbox.mapboxsdk.style.layers.Property.TEXT_ANCHOR_RIGHT;
+import static com.mapbox.mapboxsdk.style.layers.Property.TEXT_ANCHOR_TOP;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.textVariableAnchor;
 
 /**
  * Test activity showcasing a simple MapView without any MapboxMap interaction.
@@ -21,9 +31,15 @@ public class SimpleMapActivity extends AppCompatActivity {
     setContentView(R.layout.activity_map_simple);
     mapView = findViewById(R.id.mapView);
     mapView.onCreate(savedInstanceState);
-    mapView.getMapAsync(mapboxMap -> mapboxMap.setStyle(
-      new Style.Builder().fromUrl(Style.MAPBOX_STREETS)
-    ));
+    mapView.getMapAsync(mapboxMap -> {
+      mapboxMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(34.054079, -118.243012), 18));
+      mapboxMap.setStyle(
+        new Style.Builder().fromUrl(Style.MAPBOX_STREETS), style -> {
+          SymbolLayer symbolLayer = style.getLayerAs("poi-label");
+          symbolLayer.setProperties(textVariableAnchor(new String[] {TEXT_ANCHOR_TOP, TEXT_ANCHOR_RIGHT}));
+        }
+      );
+    });
   }
 
   @Override
