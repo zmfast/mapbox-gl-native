@@ -107,16 +107,6 @@ private:
     return (mbgl::style::CustomLayer *)super.rawLayer;
 }
 
-#if TARGET_OS_IPHONE
-- (EAGLContext *)context {
-    return self.style.mapView.context;
-}
-#else
-- (CGLContextObj)context {
-    return self.style.mapView.context;
-}
-#endif
-
 #pragma mark - Adding to and removing from a map view
 - (void)addToStyle:(MGLStyle *)style belowLayer:(MGLStyleLayer *)otherLayer {
     self.style = style;
@@ -191,7 +181,7 @@ private:
  causing the `-drawInMapView:withContext:` method to be called.
  */
 - (void)setNeedsDisplay {
-    [self.style.mapView setNeedsGLDisplay];
+    [self.style.mapView setNeedsRerender];
 }
 
 @end

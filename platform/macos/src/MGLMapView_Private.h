@@ -1,9 +1,13 @@
 #import "MGLMapView.h"
 
+#include <mbgl/util/size.hpp>
+
 namespace mbgl {
     class Map;
     class Renderer;
 }
+
+@class MGLSource;
 
 @interface MGLMapView (Private)
 
@@ -25,11 +29,30 @@ namespace mbgl {
 /// The map view’s OpenGL rendering context.
 - (CGLContextObj)context;
 
+- (mbgl::Size)framebufferSize;
+
+/// Map observers
+- (void)cameraWillChangeAnimated:(BOOL)animated;
+- (void)cameraIsChanging;
+- (void)cameraDidChangeAnimated:(BOOL)animated;
+- (void)mapViewWillStartLoadingMap;
+- (void)mapViewDidFinishLoadingMap;
+- (void)mapViewDidFailLoadingMapWithError:(NSError *)error;
+- (void)mapViewWillStartRenderingFrame;
+- (void)mapViewDidFinishRenderingFrameFullyRendered:(BOOL)fullyRendered;
+- (void)mapViewWillStartRenderingMap;
+- (void)mapViewDidFinishRenderingMapFullyRendered:(BOOL)fullyRendered;
+- (void)mapViewDidBecomeIdle;
+- (void)mapViewDidFinishLoadingStyle;
+- (void)sourceDidChange:(MGLSource *)source;
+
 /// Asynchronously render a frame of the map.
-- (void)setNeedsGLDisplay;
+- (void)setNeedsRerender;
 
 /// Synchronously render a frame of the map.
 - (void)renderSync;
+
+- (BOOL)isTargetingInterfaceBuilder;
 
 - (mbgl::Map *)mbglMap;
 
