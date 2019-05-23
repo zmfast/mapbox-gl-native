@@ -1,12 +1,24 @@
 package com.mapbox.mapboxsdk.testapp.activity.maplayout;
 
+import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
+import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
+import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.maps.MapView;
+import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.Style;
+import com.mapbox.mapboxsdk.style.layers.SymbolLayer;
+import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
 import com.mapbox.mapboxsdk.testapp.R;
 import com.mapbox.mapboxsdk.testapp.utils.NavUtils;
+import com.mapbox.mapboxsdk.utils.BitmapUtils;
+
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconAllowOverlap;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconIgnorePlacement;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconImage;
 
 /**
  * Test activity showcasing a simple MapView without any MapboxMap interaction.
@@ -21,9 +33,24 @@ public class SimpleMapActivity extends AppCompatActivity {
     setContentView(R.layout.activity_map_simple);
     mapView = findViewById(R.id.mapView);
     mapView.onCreate(savedInstanceState);
-    mapView.getMapAsync(mapboxMap -> mapboxMap.setStyle(
-      new Style.Builder().fromUrl(Style.MAPBOX_STREETS)
-    ));
+    mapView.getMapAsync(mapboxMap -> {
+      this.mapboxMap = mapboxMap;
+      GeoJsonSource geoJsonSource = new GeoJsonSource("ID");
+      geoJsonSource.setUrl("asset://points.geojson");
+
+      SymbolLayer symbolLayer = new SymbolLayer("ID", "ID");
+      symbolLayer.setProperties(iconImage("test"), iconAllowOverlap(true), iconIgnorePlacement(true));
+
+      Bitmap image = BitmapUtils.getBitmapFromDrawable(getResources().getDrawable(R.drawable.ic_add_white));
+
+      mapboxMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(38.901057, -77.036207), 12));
+      mapboxMap.setStyle(
+        new Style.Builder()
+          .withSource(geoJsonSource)
+          .withLayer(symbolLayer)
+          .withImage("test", image)
+      );
+    });
   }
 
   @Override
