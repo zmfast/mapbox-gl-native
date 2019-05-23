@@ -3,6 +3,11 @@
 Mapbox welcomes participation and contributions from everyone.  If you'd like to do so please see the [`Contributing Guide`](https://github.com/mapbox/mapbox-gl-native/blob/master/CONTRIBUTING.md) first to get started.
 
 ## master
+
+### Styles and rendering
+
+ - Implemented asymmetric center of perspective: the viewport center is in the center of the area specified by [MapboxMap setPadding](https://docs.mapbox.com/android/api/map-sdk/8.0.0/com/mapbox/mapboxsdk/maps/MapboxMap.html#setPadding-int-int-int-int-) and vanishing point is above it. [#14664](https://github.com/mapbox/mapbox-gl-native/pull/14664)
+
 ## 8.0.0 - May 22, 2019
  - This release improves the method for counting monthly active users. By upgrading to this release, you are opting into the changes outlined [in this blog post](https://www.mapbox.com/52219). [#14404](https://github.com/mapbox/mapbox-gl-native/pull/14404)
 

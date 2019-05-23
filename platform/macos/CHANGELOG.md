@@ -1,5 +1,11 @@
 # Changelog for Mapbox Maps SDK for macOS
 
+## master
+
+### Styles and rendering
+
+* Implemented asymmetric center of perspective: the viewport center is in the center of the area specified by [MGLMapView contentInset](https://docs.mapbox.com/ios/api/maps/5.0.0/Classes/MGLMapView.html#/c:objc(cs)MGLMapView(py)contentInset) and vanishing point is above it.  [#14664](https://github.com/mapbox/mapbox-gl-native/pull/14664)
+
 ## 0.14.0 - May 22, 2018
 
 ### Styles and rendering
