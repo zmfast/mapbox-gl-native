@@ -16,13 +16,13 @@ using namespace mbgl;
 
 class RasterTileTest {
 public:
-    FakeFileSource fileSource;
+    std::shared_ptr<FileSource> fileSource = std::make_shared<FakeFileSource>();
     TransformState transformState;
     util::RunLoop loop;
-    style::Style style { fileSource, 1 };
+    style::Style style { *fileSource, 1 };
     AnnotationManager annotationManager { style };
     ImageManager imageManager;
-    GlyphManager glyphManager { fileSource };
+    GlyphManager glyphManager;
     Tileset tileset { { "https://example.com" }, { 0, 22 }, "none" };
 
     TileParameters tileParameters {

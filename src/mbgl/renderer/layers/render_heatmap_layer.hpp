@@ -19,7 +19,8 @@ private:
     void evaluate(const PropertyEvaluationParameters&) override;
     bool hasTransition() const override;
     bool hasCrossfade() const override;
-    void render(PaintParameters&, RenderSource*) override;
+    void upload(gfx::UploadPass&, UploadParameters&) override;
+    void render(PaintParameters&) override;
 
     bool queryIntersectsFeature(
             const GeometryCoordinates&,

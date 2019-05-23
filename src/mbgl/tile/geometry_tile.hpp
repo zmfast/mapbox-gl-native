@@ -42,7 +42,7 @@ public:
     void getGlyphs(GlyphDependencies);
     void getImages(ImageRequestPair);
 
-    void upload(gfx::Context&) override;
+    void upload(gfx::UploadPass&) override;
     Bucket* getBucket(const style::Layer::Impl&) const override;
     const LayerRenderData* getLayerRenderData(const style::Layer::Impl&) const override;
     bool updateLayerProperties(const Immutable<style::LayerProperties>&) override;
@@ -108,6 +108,7 @@ private:
     std::shared_ptr<Mailbox> mailbox;
     Actor<GeometryTileWorker> worker;
 
+    std::shared_ptr<FileSource> fileSource;
     GlyphManager& glyphManager;
     ImageManager& imageManager;
 

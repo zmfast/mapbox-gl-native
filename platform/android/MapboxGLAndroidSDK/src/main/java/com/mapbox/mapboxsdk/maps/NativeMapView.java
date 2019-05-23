@@ -1051,19 +1051,34 @@ final class NativeMapView implements NativeMap {
   }
 
   @Keep
+  private boolean onCanRemoveUnusedStyleImage(String imageId) {
+    if (stateCallback != null) {
+      return stateCallback.onCanRemoveUnusedStyleImage(imageId);
+    }
+
+    return true;
+  }
+
+  @Keep
   protected void onSnapshotReady(@Nullable Bitmap mapContent) {
     if (checkState("OnSnapshotReady")) {
       return;
     }
-    if (snapshotReadyCallback != null && mapContent != null) {
-      if (viewCallback == null) {
-        snapshotReadyCallback.onSnapshotReady(mapContent);
-      } else {
-        Bitmap viewContent = viewCallback.getViewContent();
-        if (viewContent != null) {
-          snapshotReadyCallback.onSnapshotReady(BitmapUtils.mergeBitmap(mapContent, viewContent));
+
+    try {
+      if (snapshotReadyCallback != null && mapContent != null) {
+        if (viewCallback == null) {
+          snapshotReadyCallback.onSnapshotReady(mapContent);
+        } else {
+          Bitmap viewContent = viewCallback.getViewContent();
+          if (viewContent != null) {
+            snapshotReadyCallback.onSnapshotReady(BitmapUtils.mergeBitmap(mapContent, viewContent));
+          }
         }
       }
+    } catch (Throwable err) {
+      Logger.e(TAG, "Exception in onSnapshotReady", err);
+      throw err;
     }
   }
 
@@ -1457,5 +1472,7 @@ final class NativeMapView implements NativeMap {
     void onSourceChanged(String sourceId);
 
     void onStyleImageMissing(String imageId);
+
+    boolean onCanRemoveUnusedStyleImage(String imageId);
   }
 }

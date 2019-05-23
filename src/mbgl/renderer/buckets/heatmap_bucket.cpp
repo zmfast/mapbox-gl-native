@@ -24,12 +24,12 @@ HeatmapBucket::HeatmapBucket(const BucketParameters& parameters, const std::vect
 
 HeatmapBucket::~HeatmapBucket() = default;
 
-void HeatmapBucket::upload(gfx::Context& context) {
-    vertexBuffer = context.createVertexBuffer(std::move(vertices));
-    indexBuffer = context.createIndexBuffer(std::move(triangles));
+void HeatmapBucket::upload(gfx::UploadPass& uploadPass) {
+    vertexBuffer = uploadPass.createVertexBuffer(std::move(vertices));
+    indexBuffer = uploadPass.createIndexBuffer(std::move(triangles));
 
     for (auto& pair : paintPropertyBinders) {
-        pair.second.upload(context);
+        pair.second.upload(uploadPass);
     }
 
     uploaded = true;
@@ -37,10 +37,6 @@ void HeatmapBucket::upload(gfx::Context& context) {
 
 bool HeatmapBucket::hasData() const {
     return !segments.empty();
-}
-
-bool HeatmapBucket::supportsLayer(const style::Layer::Impl& impl) const {
-    return style::HeatmapLayer::Impl::staticTypeInfo() == impl.getTypeInfo();
 }
 
 void HeatmapBucket::addFeature(const GeometryTileFeature& feature,

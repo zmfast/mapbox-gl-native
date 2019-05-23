@@ -10,34 +10,8 @@
 
 namespace mbgl {
 
-PaintParameters::PaintParameters(gfx::Context& context_,
-                    float pixelRatio_,
-                    gfx::RendererBackend& backend_,
-                    const UpdateParameters& updateParameters,
-                    const EvaluatedLight& evaluatedLight_,
-                    RenderStaticData& staticData_,
-                    ImageManager& imageManager_,
-                    LineAtlas& lineAtlas_,
-                    Placement::VariableOffsets variableOffsets_)
-    : context(context_),
-    backend(backend_),
-    encoder(context.createCommandEncoder()),
-    state(updateParameters.transformState),
-    evaluatedLight(evaluatedLight_),
-    staticData(staticData_),
-    imageManager(imageManager_),
-    lineAtlas(lineAtlas_),
-    mapMode(updateParameters.mode),
-    debugOptions(updateParameters.debugOptions),
-    timePoint(updateParameters.timePoint),
-    pixelRatio(pixelRatio_),
-    variableOffsets(variableOffsets_),
-#ifndef NDEBUG
-    programs((debugOptions & MapDebugOptions::Overdraw) ? staticData_.overdrawPrograms : staticData_.programs)
-#else
-    programs(staticData_.programs)
-#endif
-{
+TransformParameters::TransformParameters(const TransformState& state_)
+    : state(state_) {
     // Update the default matrices to the current viewport dimensions.
     state.getProjMatrix(projMatrix);
 
@@ -49,7 +23,36 @@ PaintParameters::PaintParameters(gfx::Context& context_,
     // not to waste lots of depth buffer precision on very close empty space, for layer
     // types (fill-extrusion) that use the depth buffer to emulate real-world space.
     state.getProjMatrix(nearClippedProjMatrix, 100);
+}
 
+PaintParameters::PaintParameters(gfx::Context& context_,
+                    float pixelRatio_,
+                    gfx::RendererBackend& backend_,
+                    const UpdateParameters& updateParameters,
+                    const EvaluatedLight& evaluatedLight_,
+                    const TransformParameters& transformParams_,
+                    RenderStaticData& staticData_,
+                    ImageManager& imageManager_,
+                    LineAtlas& lineAtlas_)
+    : context(context_),
+    backend(backend_),
+    encoder(context.createCommandEncoder()),
+    state(updateParameters.transformState),
+    evaluatedLight(evaluatedLight_),
+    transformParams(transformParams_),
+    staticData(staticData_),
+    imageManager(imageManager_),
+    lineAtlas(lineAtlas_),
+    mapMode(updateParameters.mode),
+    debugOptions(updateParameters.debugOptions),
+    timePoint(updateParameters.timePoint),
+    pixelRatio(pixelRatio_),
+#ifndef NDEBUG
+    programs((debugOptions & MapDebugOptions::Overdraw) ? staticData_.overdrawPrograms : staticData_.programs)
+#else
+    programs(staticData_.programs)
+#endif
+{
     pixelsToGLUnits = {{ 2.0f  / state.getSize().width, -2.0f / state.getSize().height }};
 
     if (state.getViewportMode() == ViewportMode::FlippedY) {
@@ -62,7 +65,7 @@ PaintParameters::~PaintParameters() = default;
 mat4 PaintParameters::matrixForTile(const UnwrappedTileID& tileID, bool aligned) const {
     mat4 matrix;
     state.matrixFor(matrix, tileID);
-    matrix::multiply(matrix, aligned ? alignedProjMatrix : projMatrix, matrix);
+    matrix::multiply(matrix, aligned ? transformParams.alignedProjMatrix : transformParams.projMatrix, matrix);
     return matrix;
 }
 
@@ -135,7 +138,7 @@ void PaintParameters::renderTileClippingMasks(const std::vector<std::reference_w
             },
             gfx::ColorMode::disabled(),
             gfx::CullFaceMode::disabled(),
-            staticData.quadTriangleIndexBuffer,
+            *staticData.quadTriangleIndexBuffer,
             staticData.tileTriangleSegments,
             program.computeAllUniformValues(
                 ClippingMaskProgram::LayoutUniformValues {
@@ -146,12 +149,12 @@ void PaintParameters::renderTileClippingMasks(const std::vector<std::reference_w
                 state.getZoom()
             ),
             program.computeAllAttributeBindings(
-                staticData.tileVertexBuffer,
+                *staticData.tileVertexBuffer,
                 paintAttributeData,
                 properties
             ),
             ClippingMaskProgram::TextureBindings{},
-            "clipping"
+            "clipping/" + util::toString(stencilID)
         );
     }
 }

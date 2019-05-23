@@ -63,7 +63,7 @@ void Map::Impl::onUpdate() {
         style->impl->getSourceImpls(),
         style->impl->getLayerImpls(),
         annotationManager,
-        *fileSource,
+        fileSource,
         prefetchZoomDelta,
         bool(stillImageRequest),
         crossSourceCollisions
@@ -177,6 +177,14 @@ void Map::Impl::onStyleImageMissing(const std::string& id, std::function<void()>
 
     done();
     onUpdate();
+}
+
+void Map::Impl::onRemoveUnusedStyleImages(const std::vector<std::string>& unusedImageIDs) {
+    for (const auto& unusedImageID : unusedImageIDs) {
+        if (observer.onCanRemoveUnusedStyleImage(unusedImageID)) {
+            style->removeImage(unusedImageID);
+        }
+    }
 }
 
 } // namespace mbgl

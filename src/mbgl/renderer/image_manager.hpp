@@ -19,7 +19,7 @@ template <class T>
 class Actor;
 
 namespace gfx {
-class Context;
+class UploadPass;
 } // namespace gfx
 
 class ImageRequestor;
@@ -56,6 +56,7 @@ public:
     void removeRequestor(ImageRequestor&);
     void notifyIfMissingImageAdded();
     void reduceMemoryUse();
+    void reduceMemoryUseIfCacheSizeExceedsLimit();
 
     ImageVersionMap updatedImageVersions;
 
@@ -75,6 +76,7 @@ private:
     };
     std::map<ImageRequestor*, MissingImageRequestPair> missingImageRequestors;
     std::map<std::string, std::set<ImageRequestor*>> requestedImages;
+    std::size_t requestedImagesCacheSize = 0ul;
     ImageMap images;
 
     ImageManagerObserver* observer = nullptr;
@@ -83,8 +85,8 @@ private:
 public:
     optional<ImagePosition> getPattern(const std::string& name);
 
-    gfx::TextureBinding textureBinding(gfx::Context&);
-    void upload(gfx::Context&);
+    gfx::TextureBinding textureBinding();
+    void upload(gfx::UploadPass&);
 
     Size getPixelSize() const;
 

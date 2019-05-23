@@ -10,7 +10,6 @@
 
 namespace mbgl {
 
-class RenderLayerSymbolInterface;
 class SymbolBucket;
 class SymbolInstance;
 
@@ -88,13 +87,25 @@ private:
     uint16_t maxGroupID;
     bool crossSourceCollisions;
 };
+
+class BucketPlacementParameters {
+public:
+    const mat4& posMatrix;
+    const mat4& textLabelPlaneMatrix;
+    const mat4& iconLabelPlaneMatrix;
+    float scale;
+    float pixelRatio;
+    bool showCollisionBoxes;
+    bool holdingForFade;
+    const CollisionGroups::CollisionGroup& collisionGroup;
+};
     
 class Placement {
 public:
     Placement(const TransformState&, MapMode, style::TransitionOptions, const bool crossSourceCollisions, std::unique_ptr<Placement> prevPlacementOrNull = nullptr);
-    void placeLayer(const RenderLayerSymbolInterface&, const mat4&, bool showCollisionBoxes);
+    void placeLayer(const RenderLayer&, const mat4&, bool showCollisionBoxes);
     void commit(TimePoint);
-    void updateLayerOpacities(const RenderLayerSymbolInterface&);
+    void updateLayerOpacities(const RenderLayer&);
     float symbolFadeChange(TimePoint now) const;
     bool hasTransitions(TimePoint now) const;
 
@@ -105,21 +116,15 @@ public:
     void setStale();
     
     const RetainedQueryData& getQueryData(uint32_t bucketInstanceId) const;
-    using VariableOffsets = std::reference_wrapper<const std::unordered_map<uint32_t, VariableOffset>>;
-    VariableOffsets getVariableOffsets() const { return std::cref(variableOffsets); }
+    using VariableOffsets = std::unordered_map<uint32_t, VariableOffset>;
+    const VariableOffsets& getVariableOffsets() const { return variableOffsets; }
 
 private:
+    friend SymbolBucket;
     void placeLayerBucket(
             SymbolBucket&,
-            const mat4& posMatrix,
-            const mat4& textLabelPlaneMatrix,
-            const mat4& iconLabelPlaneMatrix,
-            const float scale,
-            const float pixelRatio,
-            const bool showCollisionBoxes,
-            std::unordered_set<uint32_t>& seenCrossTileIDs,
-            const bool holdingForFade,
-            const CollisionGroups::CollisionGroup& collisionGroup);
+            const BucketPlacementParameters&,
+            std::set<uint32_t>& seenCrossTileIDs);
 
     void updateBucketOpacities(SymbolBucket&, std::set<uint32_t>&);
     void markUsedJustification(SymbolBucket&, style::TextVariableAnchorType, SymbolInstance&);

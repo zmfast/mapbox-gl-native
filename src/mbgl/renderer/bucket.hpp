@@ -9,12 +9,16 @@
 namespace mbgl {
 
 namespace gfx {
-class Context;
+class UploadPass;
 } // namespace gfx
 
 class RenderLayer;
+class CrossTileSymbolLayerIndex;
+class OverscaledTileID;
 class PatternDependency;
 using PatternLayerMap = std::map<std::string, PatternDependency>;
+class Placement;
+class BucketPlacementParameters;
 
 class Bucket {
 public:
@@ -33,7 +37,7 @@ public:
 
     // As long as this bucket has a Prepare render pass, this function is getting called. Typically,
     // this only happens once when the bucket is being rendered for the first time.
-    virtual void upload(gfx::Context&) = 0;
+    virtual void upload(gfx::UploadPass&) = 0;
 
     virtual bool hasData() const = 0;
 
@@ -44,11 +48,18 @@ public:
     bool needsUpload() const {
         return hasData() && !uploaded;
     }
-    // Returns true if this bucket fits the given layer; returns false otherwise.
-    // Implementations of this class check at least that this bucket has
-    // the same layer type with the given layer, but extra checks are also
-    // possible.
-    virtual bool supportsLayer(const style::Layer::Impl&) const = 0;
+   
+    // The following methods are implemented by buckets that require cross-tile indexing and placement.
+
+    // Returns a pair, the first element of which is a bucket cross-tile id
+    // on success call; `0` otherwise. The second element is `true` if
+    // the bucket was originally registered; `false` otherwise.
+    virtual std::pair<uint32_t, bool> registerAtCrossTileIndex(CrossTileSymbolLayerIndex&, const OverscaledTileID&, uint32_t&) {
+        return std::make_pair(0u, false);
+    }
+    // Places this bucket to the given placement. Returns bucket cross-tile id on success call; `0` otherwise.
+    virtual uint32_t place(Placement&, const BucketPlacementParameters&, std::set<uint32_t>&) { return 0u; }
+    virtual void updateOpacities(Placement&, std::set<uint32_t>&) {}
 
 protected:
     Bucket() = default;

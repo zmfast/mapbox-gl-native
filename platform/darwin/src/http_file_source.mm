@@ -208,16 +208,7 @@ std::unique_ptr<AsyncRequest> HTTPFileSource::request(const Resource& resource, 
         if (impl->accountType == 0 &&
             ([url.host isEqualToString:@"mapbox.com"] || [url.host hasSuffix:@".mapbox.com"])) {
             NSURLComponents *components = [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:NO];
-            NSURLQueryItem *accountsQueryItem = nil;
-
-            // Only add the token if we have enabled the accounts SDK
-            if (MGLAccountManager.isAccountsSDKEnabled) {
-                NSCAssert(MGLAccountManager.skuToken, @"skuToken should be non-nil if the accounts SDK is enabled");
-                accountsQueryItem = [NSURLQueryItem queryItemWithName:@"sku" value:MGLAccountManager.skuToken];
-            } else {
-                accountsQueryItem = [NSURLQueryItem queryItemWithName:@"events" value:@"true"];
-            }
-
+            NSURLQueryItem *accountsQueryItem = [NSURLQueryItem queryItemWithName:@"sku" value:MGLAccountManager.skuToken];
             components.queryItems = components.queryItems ? [components.queryItems arrayByAddingObject:accountsQueryItem] : @[accountsQueryItem];
             url = components.URL;
         }
@@ -242,10 +233,10 @@ std::unique_ptr<AsyncRequest> HTTPFileSource::request(const Resource& resource, 
             dataTaskWithRequest:req
               completionHandler:^(NSData* data, NSURLResponse* res, NSError* error) {
                 if (error && [error code] == NSURLErrorCancelled) {
-                    [[MGLNetworkConfiguration sharedManager] cancelDownloadEvent:res.URL.relativePath];
+                    [[MGLNetworkConfiguration sharedManager] cancelDownloadEventForResponse:res];
                     return;
                 }
-                [[MGLNetworkConfiguration sharedManager] stopDownloadEvent:res.URL.relativePath];
+                [[MGLNetworkConfiguration sharedManager] stopDownloadEventForResponse:res];
                 Response response;
                 using Error = Response::Error;
 

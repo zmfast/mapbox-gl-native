@@ -25,10 +25,9 @@ public:
 
     bool hasData() const override;
 
-    void upload(gfx::Context&) override;
+    void upload(gfx::UploadPass&) override;
 
     float getQueryRadius(const RenderLayer&) const override;
-    bool supportsLayer(const style::Layer::Impl&) const override;
 
     gfx::VertexVector<CircleLayoutVertex> vertices;
     gfx::IndexVector<gfx::Triangles> triangles;

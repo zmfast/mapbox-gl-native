@@ -1,8 +1,6 @@
 #include <mbgl/gl/context.hpp>
 #include <mbgl/gl/enum.hpp>
 #include <mbgl/gl/renderer_backend.hpp>
-#include <mbgl/gl/vertex_buffer_resource.hpp>
-#include <mbgl/gl/index_buffer_resource.hpp>
 #include <mbgl/gl/texture_resource.hpp>
 #include <mbgl/gl/renderbuffer_resource.hpp>
 #include <mbgl/gl/draw_scope_resource.hpp>
@@ -11,7 +9,6 @@
 #include <mbgl/gl/command_encoder.hpp>
 #include <mbgl/gl/debugging_extension.hpp>
 #include <mbgl/gl/vertex_array_extension.hpp>
-#include <mbgl/gl/program_binary_extension.hpp>
 #include <mbgl/util/traits.hpp>
 #include <mbgl/util/std.hpp>
 #include <mbgl/util/logging.hpp>
@@ -51,8 +48,6 @@ static_assert(underlying_type(UniformDataType::FloatMat3) == GL_FLOAT_MAT3, "Ope
 static_assert(underlying_type(UniformDataType::FloatMat4) == GL_FLOAT_MAT4, "OpenGL type mismatch");
 static_assert(underlying_type(UniformDataType::Sampler2D) == GL_SAMPLER_2D, "OpenGL type mismatch");
 static_assert(underlying_type(UniformDataType::SamplerCube) == GL_SAMPLER_CUBE, "OpenGL type mismatch");
-
-static_assert(std::is_same<BinaryProgramFormat, GLenum>::value, "OpenGL type mismatch");
 
 Context::Context(RendererBackend& backend_)
     : gfx::Context(gfx::ContextType::OpenGL, [] {
@@ -108,10 +103,6 @@ void Context::initializeExtensions(const std::function<gl::ProcAddress(const cha
             && !disableVAOExtension) {
                 vertexArray = std::make_unique<extension::VertexArray>(fn);
         }
-
-#if MBGL_HAS_BINARY_PROGRAMS
-        programBinary = std::make_unique<extension::ProgramBinary>(fn);
-#endif
 
 #if MBGL_USE_GLES2
         constexpr const char* halfFloatExtensionName = "OES_texture_half_float";
@@ -171,33 +162,22 @@ UniqueShader Context::createShader(ShaderType type, const std::initializer_list<
     throw std::runtime_error("shader failed to compile");
 }
 
-UniqueProgram Context::createProgram(ShaderID vertexShader, ShaderID fragmentShader) {
+UniqueProgram Context::createProgram(ShaderID vertexShader, ShaderID fragmentShader, const char* location0AttribName) {
     UniqueProgram result { MBGL_CHECK_ERROR(glCreateProgram()), { this } };
 
     MBGL_CHECK_ERROR(glAttachShader(result, vertexShader));
     MBGL_CHECK_ERROR(glAttachShader(result, fragmentShader));
 
+    // It is important to have attribute at position 0 enabled: conveniently,
+    // position attribute is always first and always enabled. The integrity of
+    // this assumption is verified in AttributeLocations::queryLocations and
+    // AttributeLocations::getFirstAttribName.
+    MBGL_CHECK_ERROR(glBindAttribLocation(result, 0, location0AttribName));
+
     linkProgram(result);
 
     return result;
 }
-
-#if MBGL_HAS_BINARY_PROGRAMS
-UniqueProgram Context::createProgram(BinaryProgramFormat binaryFormat,
-                                     const std::string& binaryProgram) {
-    assert(supportsProgramBinaries());
-    UniqueProgram result{ MBGL_CHECK_ERROR(glCreateProgram()), { this } };
-    MBGL_CHECK_ERROR(programBinary->programBinary(result, static_cast<GLenum>(binaryFormat),
-                                                  binaryProgram.data(),
-                                                  static_cast<GLint>(binaryProgram.size())));
-    verifyProgramLinkage(result);
-    return result;
-}
-#else
-UniqueProgram Context::createProgram(BinaryProgramFormat, const std::string&) {
-    throw std::runtime_error("binary programs are not supported");
-}
-#endif
 
 void Context::linkProgram(ProgramID program_) {
     MBGL_CHECK_ERROR(glLinkProgram(program_));
@@ -222,41 +202,6 @@ void Context::verifyProgramLinkage(ProgramID program_) {
     throw std::runtime_error("program failed to link");
 }
 
-std::unique_ptr<gfx::VertexBufferResource>
-Context::createVertexBufferResource(const void* data, std::size_t size, const gfx::BufferUsageType usage) {
-    BufferID id = 0;
-    MBGL_CHECK_ERROR(glGenBuffers(1, &id));
-    UniqueBuffer result { std::move(id), { this } };
-    vertexBuffer = result;
-    MBGL_CHECK_ERROR(glBufferData(GL_ARRAY_BUFFER, size, data, Enum<gfx::BufferUsageType>::to(usage)));
-    return std::make_unique<gl::VertexBufferResource>(std::move(result));
-}
-
-void Context::updateVertexBufferResource(gfx::VertexBufferResource& resource, const void* data, std::size_t size) {
-    vertexBuffer = static_cast<gl::VertexBufferResource&>(resource).buffer;
-    MBGL_CHECK_ERROR(glBufferSubData(GL_ARRAY_BUFFER, 0, size, data));
-}
-
-std::unique_ptr<gfx::IndexBufferResource>
-Context::createIndexBufferResource(const void* data, std::size_t size, const gfx::BufferUsageType usage) {
-    BufferID id = 0;
-    MBGL_CHECK_ERROR(glGenBuffers(1, &id));
-    UniqueBuffer result { std::move(id), { this } };
-    bindVertexArray = 0;
-    globalVertexArrayState.indexBuffer = result;
-    MBGL_CHECK_ERROR(glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, Enum<gfx::BufferUsageType>::to(usage)));
-    return std::make_unique<gl::IndexBufferResource>(std::move(result));
-}
-
-void Context::updateIndexBufferResource(gfx::IndexBufferResource& resource, const void* data, std::size_t size) {
-    // Be sure to unbind any existing vertex array object before binding the index buffer
-    // so that we don't mess up another VAO
-    bindVertexArray = 0;
-    globalVertexArrayState.indexBuffer = static_cast<gl::IndexBufferResource&>(resource).buffer;
-    MBGL_CHECK_ERROR(glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, size, data));
-}
-
-
 UniqueTexture Context::createUniqueTexture() {
     if (pooledTextures.empty()) {
         pooledTextures.resize(TextureMax);
@@ -275,51 +220,6 @@ bool Context::supportsVertexArrays() const {
            vertexArray->deleteVertexArrays;
 }
 
-#if MBGL_HAS_BINARY_PROGRAMS
-bool Context::supportsProgramBinaries() const {
-    if (!programBinary || !programBinary->programBinary || !programBinary->getProgramBinary) {
-        return false;
-    }
-
-    // Blacklist Adreno 3xx, 4xx, and 5xx GPUs due to known bugs:
-    // https://bugs.chromium.org/p/chromium/issues/detail?id=510637
-    // https://chromium.googlesource.com/chromium/src/gpu/+/master/config/gpu_driver_bug_list.json#2316
-    // Blacklist Vivante GC4000 due to bugs when linking loaded programs:
-    // https://github.com/mapbox/mapbox-gl-native/issues/10704
-    const std::string renderer = reinterpret_cast<const char*>(MBGL_CHECK_ERROR(glGetString(GL_RENDERER)));
-    if (renderer.find("Adreno (TM) 3") != std::string::npos
-     || renderer.find("Adreno (TM) 4") != std::string::npos
-     || renderer.find("Adreno (TM) 5") != std::string::npos
-     || renderer.find("Vivante GC4000") != std::string::npos) {
-        return false;
-    }
-
-    return true;
-}
-
-optional<std::pair<BinaryProgramFormat, std::string>>
-Context::getBinaryProgram(ProgramID program_) const {
-    if (!supportsProgramBinaries()) {
-        return {};
-    }
-    GLint binaryLength;
-    MBGL_CHECK_ERROR(glGetProgramiv(program_, GL_PROGRAM_BINARY_LENGTH, &binaryLength));
-    std::string binary;
-    binary.resize(binaryLength);
-    GLenum binaryFormat;
-    MBGL_CHECK_ERROR(programBinary->getProgramBinary(
-        program_, binaryLength, &binaryLength, &binaryFormat, const_cast<char*>(binary.data())));
-    if (size_t(binaryLength) != binary.size()) {
-        return {};
-    }
-    return { { binaryFormat, std::move(binary) } };
-}
-#else
-optional<std::pair<BinaryProgramFormat, std::string>> Context::getBinaryProgram(ProgramID) const {
-    return {};
-}
-#endif
-
 VertexArray Context::createVertexArray() {
     if (supportsVertexArrays()) {
         VertexArrayID id = 0;
@@ -337,6 +237,32 @@ UniqueFramebuffer Context::createFramebuffer() {
     FramebufferID id = 0;
     MBGL_CHECK_ERROR(glGenFramebuffers(1, &id));
     return UniqueFramebuffer{ std::move(id), { this } };
+}
+
+std::unique_ptr<gfx::TextureResource> Context::createTextureResource(
+    const Size size, const gfx::TexturePixelType format, const gfx::TextureChannelDataType type) {
+    auto obj = createUniqueTexture();
+    std::unique_ptr<gfx::TextureResource> resource =
+        std::make_unique<gl::TextureResource>(std::move(obj));
+
+    // Always use texture unit 0 for manipulating it.
+    activeTextureUnit = 0;
+    texture[0] = static_cast<gl::TextureResource&>(*resource).texture;
+
+    // Creates an empty texture with the specified size and format.
+    MBGL_CHECK_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, Enum<gfx::TexturePixelType>::to(format),
+                                  size.width, size.height, 0,
+                                  Enum<gfx::TexturePixelType>::to(format),
+                                  Enum<gfx::TextureChannelDataType>::to(type), nullptr));
+
+    // We are using clamp to edge here since OpenGL ES doesn't allow GL_REPEAT on NPOT textures.
+    // We use those when the pixelRatio isn't a power of two, e.g. on iPhone 6 Plus.
+    MBGL_CHECK_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+    MBGL_CHECK_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+    MBGL_CHECK_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
+    MBGL_CHECK_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
+
+    return resource;
 }
 
 std::unique_ptr<gfx::RenderbufferResource>
@@ -504,55 +430,6 @@ Context::createFramebuffer(const gfx::Texture& color,
                                                depthResource.renderbuffer));
     checkFramebuffer();
     return { depth.getSize(), std::move(fbo) };
-}
-
-std::unique_ptr<gfx::TextureResource>
-Context::createTextureResource(const Size size,
-                               const void* data,
-                               gfx::TexturePixelType format,
-                               gfx::TextureChannelDataType type) {
-    auto obj = createUniqueTexture();
-    std::unique_ptr<gfx::TextureResource> resource = std::make_unique<gl::TextureResource>(std::move(obj));
-    pixelStoreUnpack = { 1 };
-    updateTextureResource(*resource, size, data, format, type);
-    // We are using clamp to edge here since OpenGL ES doesn't allow GL_REPEAT on NPOT textures.
-    // We use those when the pixelRatio isn't a power of two, e.g. on iPhone 6 Plus.
-    MBGL_CHECK_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-    MBGL_CHECK_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-    MBGL_CHECK_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
-    MBGL_CHECK_ERROR(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-    return resource;
-}
-
-void Context::updateTextureResource(gfx::TextureResource& resource,
-                                    const Size size,
-                                    const void* data,
-                                    gfx::TexturePixelType format,
-                                    gfx::TextureChannelDataType type) {
-    // Always use texture unit 0 for manipulating it.
-    activeTextureUnit = 0;
-    texture[0] = static_cast<gl::TextureResource&>(resource).texture;
-    MBGL_CHECK_ERROR(glTexImage2D(GL_TEXTURE_2D, 0, Enum<gfx::TexturePixelType>::to(format),
-                                  size.width, size.height, 0,
-                                  Enum<gfx::TexturePixelType>::to(format),
-                                  Enum<gfx::TextureChannelDataType>::to(type), data));
-}
-
-void Context::updateTextureResourceSub(gfx::TextureResource& resource,
-                                       const uint16_t xOffset,
-                                       const uint16_t yOffset,
-                                       const Size size,
-                                       const void* data,
-                                       gfx::TexturePixelType format,
-                                       gfx::TextureChannelDataType type) {
-    // Always use texture unit 0 for manipulating it.
-    activeTextureUnit = 0;
-    texture[0] = static_cast<const gl::TextureResource&>(resource).texture;
-    MBGL_CHECK_ERROR(glTexSubImage2D(GL_TEXTURE_2D, 0,
-                                  xOffset, yOffset,
-                                  size.width, size.height,
-                                  Enum<gfx::TexturePixelType>::to(format),
-                                  Enum<gfx::TextureChannelDataType>::to(type), data));
 }
 
 std::unique_ptr<gfx::OffscreenTexture>

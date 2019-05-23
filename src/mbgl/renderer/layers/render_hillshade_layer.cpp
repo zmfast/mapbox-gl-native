@@ -65,14 +65,17 @@ bool RenderHillshadeLayer::hasCrossfade() const {
     return false;
 }
 
-void RenderHillshadeLayer::render(PaintParameters& parameters, RenderSource* src) {
+void RenderHillshadeLayer::prepare(const LayerPrepareParameters& params) {
+    RenderLayer::prepare(params);
+    if (auto* demsrc = params.source->as<RenderRasterDEMSource>()) {
+        maxzoom = demsrc->getMaxZoom();
+    }
+}
+
+void RenderHillshadeLayer::render(PaintParameters& parameters) {
     if (parameters.pass != RenderPass::Translucent && parameters.pass != RenderPass::Pass3D)
         return;
-    const auto& evaluated = static_cast<const HillshadeLayerProperties&>(*evaluatedProperties).evaluated;
-    auto* demsrc = static_cast<RenderRasterDEMSource*>(src);
-    const uint8_t TERRAIN_RGB_MAXZOOM = 15;
-    const uint8_t maxzoom = demsrc != nullptr ? demsrc->getMaxZoom() : TERRAIN_RGB_MAXZOOM;
-
+    const auto& evaluated = static_cast<const HillshadeLayerProperties&>(*evaluatedProperties).evaluated;  
     auto draw = [&] (const mat4& matrix,
                      const auto& vertexBuffer,
                      const auto& indexBuffer,
@@ -162,7 +165,7 @@ void RenderHillshadeLayer::render(PaintParameters& parameters, RenderSource* src
                 parameters.state.getZoom()
             );
             const auto allAttributeBindings = programInstance.computeAllAttributeBindings(
-                parameters.staticData.rasterVertexBuffer,
+                *parameters.staticData.rasterVertexBuffer,
                 paintAttributeData,
                 properties
             );
@@ -177,7 +180,7 @@ void RenderHillshadeLayer::render(PaintParameters& parameters, RenderSource* src
                 gfx::StencilMode::disabled(),
                 parameters.colorModeForRenderPass(),
                 gfx::CullFaceMode::disabled(),
-                parameters.staticData.quadTriangleIndexBuffer,
+                *parameters.staticData.quadTriangleIndexBuffer,
                 parameters.staticData.rasterSegments,
                 allUniformValues,
                 allAttributeBindings,
@@ -204,8 +207,8 @@ void RenderHillshadeLayer::render(PaintParameters& parameters, RenderSource* src
             } else {
                 // Draw the full tile.
                 draw(parameters.matrixForTile(tile.id, true),
-                     parameters.staticData.rasterVertexBuffer,
-                     parameters.staticData.quadTriangleIndexBuffer,
+                     *parameters.staticData.rasterVertexBuffer,
+                     *parameters.staticData.quadTriangleIndexBuffer,
                      parameters.staticData.rasterSegments,
                      tile.id,
                      HillshadeProgram::TextureBindings{

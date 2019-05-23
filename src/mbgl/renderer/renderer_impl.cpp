@@ -6,6 +6,7 @@
 #include <mbgl/renderer/render_layer.hpp>
 #include <mbgl/renderer/render_static_data.hpp>
 #include <mbgl/renderer/update_parameters.hpp>
+#include <mbgl/renderer/upload_parameters.hpp>
 #include <mbgl/renderer/paint_parameters.hpp>
 #include <mbgl/renderer/transition_parameters.hpp>
 #include <mbgl/renderer/property_evaluation_parameters.hpp>
@@ -16,6 +17,7 @@
 #include <mbgl/gfx/backend_scope.hpp>
 #include <mbgl/renderer/image_manager.hpp>
 #include <mbgl/gfx/renderer_backend.hpp>
+#include <mbgl/gfx/upload_pass.hpp>
 #include <mbgl/gfx/render_pass.hpp>
 #include <mbgl/gfx/cull_face_mode.hpp>
 #include <mbgl/gfx/context.hpp>
@@ -47,6 +49,7 @@ Renderer::Impl::Impl(gfx::RendererBackend& backend_,
     , pixelRatio(pixelRatio_)
     , programCacheDir(std::move(programCacheDir_))
     , localFontFamily(std::move(localFontFamily_))
+    , glyphManager(std::make_unique<GlyphManager>(std::make_unique<LocalGlyphRasterizer>(localFontFamily)))
     , imageManager(std::make_unique<ImageManager>())
     , lineAtlas(std::make_unique<LineAtlas>(Size{ 256, 512 }))
     , imageImpls(makeMutable<std::vector<Immutable<style::Image::Impl>>>())
@@ -54,6 +57,7 @@ Renderer::Impl::Impl(gfx::RendererBackend& backend_,
     , layerImpls(makeMutable<std::vector<Immutable<style::Layer::Impl>>>())
     , renderLight(makeMutable<Light::Impl>())
     , placement(std::make_unique<Placement>(TransformState{}, MapMode::Static, TransitionOptions{}, true)) {
+    glyphManager->setObserver(this);
     imageManager->setObserver(this);
 }
 
@@ -77,12 +81,7 @@ void Renderer::Impl::setObserver(RendererObserver* observer_) {
 }
 
 void Renderer::Impl::render(const UpdateParameters& updateParameters) {
-    if (!glyphManager) {
-        glyphManager = std::make_unique<GlyphManager>(updateParameters.fileSource, std::make_unique<LocalGlyphRasterizer>(localFontFamily));
-        glyphManager->setObserver(this);
-    }
     const bool isMapModeContinuous = updateParameters.mode == MapMode::Continuous;
-
     if (!isMapModeContinuous) {
         // Reset zoom history state.
         zoomHistory.first = true;
@@ -225,7 +224,7 @@ void Renderer::Impl::render(const UpdateParameters& updateParameters) {
     };
 
     std::set<RenderItem> renderItems;
-    std::vector<const RenderLayerSymbolInterface*> renderItemsWithSymbols;
+    std::vector<std::reference_wrapper<RenderLayer>> layersNeedPlacement;
     auto renderItemsEmplaceHint = renderItems.begin();
 
     // Update all sources and initialize renderItems.
@@ -292,15 +291,23 @@ void Renderer::Impl::render(const UpdateParameters& updateParameters) {
 
     observer->onWillStartRenderingFrame();
 
-    // Set render tiles to the render items.
+    TransformParameters transformParams(updateParameters.transformState);
+
+    // Update all matrices and generate data that we should upload to the GPU.
+    for (const auto& entry : renderSources) {
+        if (entry.second->isEnabled()) {
+            entry.second->prepare({transformParams, updateParameters.debugOptions});
+        }
+    }
+
     for (auto& renderItem : renderItems) {
         if (!renderItem.source) {
             continue;
         }
         RenderLayer& renderLayer = renderItem.layer;
-        renderLayer.setRenderTiles(renderItem.source->getRenderTiles(), updateParameters.transformState);
-        if (const RenderLayerSymbolInterface* symbolLayer = renderLayer.getSymbolInterface()) {
-            renderItemsWithSymbols.push_back(symbolLayer);
+        renderLayer.prepare({renderItem.source, updateParameters.transformState});
+        if (renderLayer.needsPlacement()) {
+            layersNeedPlacement.emplace_back(renderLayer);
         }
     }
 
@@ -313,7 +320,6 @@ void Renderer::Impl::render(const UpdateParameters& updateParameters) {
         bool symbolBucketsChanged = false;
         const bool placementChanged = !placement->stillRecent(updateParameters.timePoint);
         std::set<std::string> usedSymbolLayers;
-
         if (placementChanged) {
             placement = std::make_unique<Placement>(
                 updateParameters.transformState, updateParameters.mode,
@@ -321,15 +327,13 @@ void Renderer::Impl::render(const UpdateParameters& updateParameters) {
                 std::move(placement));
         }
 
-        for (auto it = renderItemsWithSymbols.rbegin(); it != renderItemsWithSymbols.rend(); ++it) {
-            const RenderLayerSymbolInterface *symbolLayer = *it;
-            if (crossTileSymbolIndex.addLayer(*symbolLayer, updateParameters.transformState.getLatLng().longitude())) symbolBucketsChanged = true;
+        for (auto it = layersNeedPlacement.rbegin(); it != layersNeedPlacement.rend(); ++it) {
+            const RenderLayer& layer = *it;
+            if (crossTileSymbolIndex.addLayer(layer, updateParameters.transformState.getLatLng().longitude())) symbolBucketsChanged = true;
 
             if (placementChanged) {
-                usedSymbolLayers.insert(symbolLayer->layerID());
-                mat4 projMatrix;
-                updateParameters.transformState.getProjMatrix(projMatrix);
-                placement->placeLayer(*symbolLayer, projMatrix, updateParameters.debugOptions & MapDebugOptions::Collision);
+                usedSymbolLayers.insert(layer.getID());
+                placement->placeLayer(layer, transformParams.projMatrix, updateParameters.debugOptions & MapDebugOptions::Collision);
             }
         }
 
@@ -341,25 +345,28 @@ void Renderer::Impl::render(const UpdateParameters& updateParameters) {
             placement->setStale();
         }
 
-
         if (placementChanged || symbolBucketsChanged) {
-            for (auto it = renderItemsWithSymbols.rbegin(); it != renderItemsWithSymbols.rend(); ++it) {
-                const RenderLayerSymbolInterface *symbolLayer = *it;
-                placement->updateLayerOpacities(*symbolLayer);
+            for (auto it = layersNeedPlacement.rbegin(); it != layersNeedPlacement.rend(); ++it) {
+                placement->updateLayerOpacities(*it);
             }
         }
     }
 
+    auto& context = backend.getContext();
+
+    // Blocks execution until the renderable is available.
+    backend.getDefaultRenderable().wait();
+
     PaintParameters parameters {
-        backend.getContext(),
+        context,
         pixelRatio,
         backend,
         updateParameters,
         renderLight.getEvaluated(),
+        transformParams,
         *staticData,
         *imageManager,
         *lineAtlas,
-        placement->getVariableOffsets()
     };
 
     parameters.symbolFadeChange = placement->symbolFadeChange(updateParameters.timePoint);
@@ -367,17 +374,32 @@ void Renderer::Impl::render(const UpdateParameters& updateParameters) {
     // - UPLOAD PASS -------------------------------------------------------------------------------
     // Uploads all required buffers and images before we do any actual rendering.
     {
-        const auto debugGroup(parameters.encoder->createDebugGroup("upload"));
+        const auto uploadPass = parameters.encoder->createUploadPass("upload");
 
-        parameters.imageManager.upload(parameters.context);
-        parameters.lineAtlas.upload(parameters.context);
-        
         // Update all clipping IDs + upload buckets.
         for (const auto& entry : renderSources) {
             if (entry.second->isEnabled()) {
-                entry.second->startRender(parameters);
+                entry.second->upload(*uploadPass);
             }
         }
+
+        UploadParameters uploadParameters{
+            updateParameters.transformState,
+            placement->getVariableOffsets(),
+            *imageManager,
+            *lineAtlas,
+        };
+
+        for (auto& renderItem : renderItems) {
+            RenderLayer& renderLayer = renderItem.layer;
+            if (renderLayer.hasRenderPass(RenderPass::Upload)) {
+                renderLayer.upload(*uploadPass, uploadParameters);
+            }
+        }
+
+        staticData->upload(*uploadPass);
+        imageManager->upload(*uploadPass);
+        lineAtlas->upload(*uploadPass);
     }
 
     // - 3D PASS -------------------------------------------------------------------------------------
@@ -402,7 +424,7 @@ void Renderer::Impl::render(const UpdateParameters& updateParameters) {
             RenderLayer& renderLayer = it->layer;
             if (renderLayer.hasRenderPass(parameters.pass)) {
                 const auto layerDebugGroup(parameters.encoder->createDebugGroup(renderLayer.getID().c_str()));
-                renderLayer.render(parameters, it->source);
+                renderLayer.render(parameters);
             }
         }
     }
@@ -436,7 +458,7 @@ void Renderer::Impl::render(const UpdateParameters& updateParameters) {
             RenderLayer& renderLayer = it->layer;
             if (renderLayer.hasRenderPass(parameters.pass)) {
                 const auto layerDebugGroup(parameters.renderPass->createDebugGroup(renderLayer.getID().c_str()));
-                renderLayer.render(parameters, it->source);
+                renderLayer.render(parameters);
             }
         }
     }
@@ -453,7 +475,7 @@ void Renderer::Impl::render(const UpdateParameters& updateParameters) {
             RenderLayer& renderLayer = it->layer;
             if (renderLayer.hasRenderPass(parameters.pass)) {
                 const auto layerDebugGroup(parameters.renderPass->createDebugGroup(renderLayer.getID().c_str()));
-                renderLayer.render(parameters, it->source);
+                renderLayer.render(parameters);
             }
         }
     }
@@ -484,9 +506,10 @@ void Renderer::Impl::render(const UpdateParameters& updateParameters) {
     }
 #endif
 
+    const bool needsRepaint = isMapModeContinuous && hasTransitions(parameters.timePoint);
     observer->onDidFinishRenderingFrame(
         loaded ? RendererObserver::RenderMode::Full : RendererObserver::RenderMode::Partial,
-        isMapModeContinuous && hasTransitions(parameters.timePoint)
+        needsRepaint
     );
 
     if (!loaded) {
@@ -494,6 +517,14 @@ void Renderer::Impl::render(const UpdateParameters& updateParameters) {
     } else if (renderState != RenderState::Fully) {
         renderState = RenderState::Fully;
         observer->onDidFinishRenderingMap();
+    } else if (!needsRepaint) {
+        // Notify observer about unused images when map is fully loaded
+        // and there are no ongoing transitions.
+        imageManager->reduceMemoryUseIfCacheSizeExceedsLimit();
+    }
+
+    if (updateParameters.mode == MapMode::Continuous) {
+        parameters.encoder->present(parameters.backend.getDefaultRenderable());
     }
 
     // CommandEncoder destructor submits render commands.
@@ -630,10 +661,8 @@ void Renderer::Impl::reduceMemoryUse() {
         entry.second->reduceMemoryUse();
     }
     backend.getContext().performCleanup();
+    imageManager->reduceMemoryUse();
     observer->onInvalidate();
-    if (imageManager) {
-        imageManager->reduceMemoryUse();
-    }
 }
 
 void Renderer::Impl::dumpDebugLogs() {
@@ -726,6 +755,10 @@ void Renderer::Impl::onTileChanged(RenderSource&, const OverscaledTileID&) {
 
 void Renderer::Impl::onStyleImageMissing(const std::string& id, std::function<void()> done) {
     observer->onStyleImageMissing(id, std::move(done));
+}
+
+void Renderer::Impl::onRemoveUnusedStyleImages(const std::vector<std::string>& unusedImageIDs) {
+    observer->onRemoveUnusedStyleImages(unusedImageIDs);
 }
 
 } // namespace mbgl

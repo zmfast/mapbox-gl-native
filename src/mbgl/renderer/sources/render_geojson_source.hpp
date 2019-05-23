@@ -23,7 +23,8 @@ public:
                 bool needsRelayout,
                 const TileParameters&) final;
 
-    void startRender(PaintParameters&) final;
+    void upload(gfx::UploadPass&) final;
+    void prepare(const SourcePrepareParameters&) final;
     void finishRender(PaintParameters&) final;
 
     std::vector<std::reference_wrapper<RenderTile>> getRenderTiles() final;

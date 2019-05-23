@@ -8,6 +8,12 @@ namespace mbgl {
 
 class RasterBucket;
 
+class ImageLayerRenderData {
+public:
+    std::shared_ptr<RasterBucket> bucket;
+    std::shared_ptr<std::vector<mat4>> matrices;
+};
+
 class RenderImageSource : public RenderSource {
 public:
     RenderImageSource(Immutable<style::ImageSource::Impl>);
@@ -15,7 +21,8 @@ public:
 
     bool isLoaded() const final;
 
-    void startRender(PaintParameters&) final;
+    void upload(gfx::UploadPass&) final;
+    void prepare(const SourcePrepareParameters&) final;
     void finishRender(PaintParameters&) final;
 
     void update(Immutable<style::Source::Impl>,
@@ -43,12 +50,10 @@ public:
 
 private:
     friend class RenderRasterLayer;
-
     const style::ImageSource::Impl& impl() const;
 
+    ImageLayerRenderData sharedData;
     std::vector<UnwrappedTileID> tileIds;
-    std::unique_ptr<RasterBucket> bucket;
-    std::vector<mat4> matrices;
 };
 
 template <>

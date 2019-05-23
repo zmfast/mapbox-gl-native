@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mbgl/map/mode.hpp>
 #include <mbgl/tile/tile_id.hpp>
 #include <mbgl/tile/tile_observer.hpp>
 #include <mbgl/util/mat4.hpp>
@@ -26,10 +27,22 @@ class Tile;
 class RenderSourceObserver;
 class TileParameters;
 class CollisionIndex;
+class TransformParameters;
+
+namespace gfx {
+class UploadPass;
+} // namespace gfx
+
+class SourcePrepareParameters {
+public:
+    const TransformParameters& transform;
+    const MapDebugOptions& debugOptions;
+};
 
 class RenderSource : protected TileObserver {
 public:
     static std::unique_ptr<RenderSource> create(Immutable<style::Source::Impl>);
+    virtual ~RenderSource();
 
     // Check whether this source is of the given subtype.
     template <class T>
@@ -55,7 +68,8 @@ public:
                         bool needsRelayout,
                         const TileParameters&) = 0;
 
-    virtual void startRender(PaintParameters&) = 0;
+    virtual void upload(gfx::UploadPass&) = 0;
+    virtual void prepare(const SourcePrepareParameters&) = 0;
     virtual void finishRender(PaintParameters&) = 0;
 
     // Returns a list of RenderTiles, sorted by tile id.

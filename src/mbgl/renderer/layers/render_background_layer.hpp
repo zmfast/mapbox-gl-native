@@ -17,7 +17,8 @@ private:
     bool hasTransition() const override;
     bool hasCrossfade() const override;
     optional<Color> getSolidBackground() const override;
-    void render(PaintParameters&, RenderSource*) override;
+    void upload(gfx::UploadPass&, UploadParameters&) override;
+    void render(PaintParameters&) override;
 
     // Paint properties
     style::BackgroundPaintProperties::Unevaluated unevaluated;

@@ -1,13 +1,13 @@
 #pragma once
 
 #include <mbgl/gfx/context.hpp>
-#include <mbgl/gl/features.hpp>
 #include <mbgl/gl/object.hpp>
 #include <mbgl/gl/state.hpp>
 #include <mbgl/gl/value.hpp>
 #include <mbgl/gl/framebuffer.hpp>
 #include <mbgl/gl/vertex_array.hpp>
 #include <mbgl/gl/types.hpp>
+#include <mbgl/gfx/texture.hpp>
 #include <mbgl/gfx/draw_mode.hpp>
 #include <mbgl/gfx/depth_mode.hpp>
 #include <mbgl/gfx/stencil_mode.hpp>
@@ -32,7 +32,6 @@ class RendererBackend;
 namespace extension {
 class VertexArray;
 class Debugging;
-class ProgramBinary;
 } // namespace extension
 
 class Context final : public gfx::Context {
@@ -42,23 +41,17 @@ public:
     Context(const Context&) = delete;
     Context& operator=(const Context& other) = delete;
 
+    std::unique_ptr<gfx::CommandEncoder> createCommandEncoder() override;
+
     void initializeExtensions(const std::function<gl::ProcAddress(const char*)>&);
 
     void enableDebugging();
 
     UniqueShader createShader(ShaderType type, const std::initializer_list<const char*>& sources);
-    UniqueProgram createProgram(ShaderID vertexShader, ShaderID fragmentShader);
-    UniqueProgram createProgram(BinaryProgramFormat binaryFormat, const std::string& binaryProgram);
+    UniqueProgram createProgram(ShaderID vertexShader, ShaderID fragmentShader, const char* location0AttribName);
     void verifyProgramLinkage(ProgramID);
     void linkProgram(ProgramID);
     UniqueTexture createUniqueTexture();
-
-#if MBGL_HAS_BINARY_PROGRAMS
-    bool supportsProgramBinaries() const;
-#else
-    constexpr static bool supportsProgramBinaries() { return false; }
-#endif
-    optional<std::pair<BinaryProgramFormat, std::string>> getBinaryProgram(ProgramID) const;
 
     Framebuffer createFramebuffer(const gfx::Renderbuffer<gfx::RenderbufferPixelType::RGBA>&,
                                   const gfx::Renderbuffer<gfx::RenderbufferPixelType::DepthStencil>&);
@@ -137,9 +130,6 @@ private:
 
     std::unique_ptr<extension::Debugging> debugging;
     std::unique_ptr<extension::VertexArray> vertexArray;
-#if MBGL_HAS_BINARY_PROGRAMS
-    std::unique_ptr<extension::ProgramBinary> programBinary;
-#endif
 
 public:
     State<value::ActiveTextureUnit> activeTextureUnit;
@@ -189,21 +179,15 @@ private:
     State<value::PointSize> pointSize;
 #endif // MBGL_USE_GLES2
 
-    std::unique_ptr<gfx::VertexBufferResource> createVertexBufferResource(const void* data, std::size_t size, const gfx::BufferUsageType) override;
-    void updateVertexBufferResource(gfx::VertexBufferResource&, const void* data, std::size_t size) override;
-    std::unique_ptr<gfx::IndexBufferResource> createIndexBufferResource(const void* data, std::size_t size, const gfx::BufferUsageType) override;
-    void updateIndexBufferResource(gfx::IndexBufferResource&, const void* data, std::size_t size) override;
-
-    std::unique_ptr<gfx::TextureResource> createTextureResource(Size, const void* data, gfx::TexturePixelType, gfx::TextureChannelDataType) override;
-    void updateTextureResource(gfx::TextureResource&, Size, const void* data, gfx::TexturePixelType, gfx::TextureChannelDataType) override;
-    void updateTextureResourceSub(gfx::TextureResource&, const uint16_t xOffset, const uint16_t yOffset, Size, const void* data, gfx::TexturePixelType, gfx::TextureChannelDataType) override;
-
     std::unique_ptr<gfx::OffscreenTexture> createOffscreenTexture(
         Size, gfx::TextureChannelDataType = gfx::TextureChannelDataType::UnsignedByte) override;
     std::unique_ptr<gfx::OffscreenTexture> createOffscreenTexture(
         Size,
         gfx::Renderbuffer<gfx::RenderbufferPixelType::Depth>&,
         gfx::TextureChannelDataType = gfx::TextureChannelDataType::UnsignedByte) override;
+
+    std::unique_ptr<gfx::TextureResource>
+        createTextureResource(Size, gfx::TexturePixelType, gfx::TextureChannelDataType) override;
 
     std::unique_ptr<gfx::RenderbufferResource> createRenderbufferResource(gfx::RenderbufferPixelType, Size size) override;
 
@@ -217,8 +201,6 @@ private:
 
     VertexArray createVertexArray();
     bool supportsVertexArrays() const;
-
-    std::unique_ptr<gfx::CommandEncoder> createCommandEncoder() override;
 
     friend detail::ProgramDeleter;
     friend detail::ShaderDeleter;

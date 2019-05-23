@@ -7,7 +7,6 @@
 #include <mbgl/gfx/stencil_mode.hpp>
 #include <mbgl/gfx/color_mode.hpp>
 #include <mbgl/util/mat4.hpp>
-#include <mbgl/text/placement.hpp>
 
 #include <array>
 #include <map>
@@ -32,6 +31,16 @@ class CommandEncoder;
 class RenderPass;
 } // namespace gfx
 
+
+class TransformParameters {
+public:
+    TransformParameters(const TransformState&);
+    mat4 projMatrix;
+    mat4 alignedProjMatrix;
+    mat4 nearClippedProjMatrix;
+    const TransformState& state;
+};
+
 class PaintParameters {
 public:
     PaintParameters(gfx::Context&,
@@ -39,10 +48,10 @@ public:
                     gfx::RendererBackend&,
                     const UpdateParameters&,
                     const EvaluatedLight&,
+                    const TransformParameters&,
                     RenderStaticData&,
                     ImageManager&,
-                    LineAtlas&,
-                    Placement::VariableOffsets);
+                    LineAtlas&);
     ~PaintParameters();
 
     gfx::Context& context;
@@ -52,6 +61,7 @@ public:
 
     const TransformState& state;
     const EvaluatedLight& evaluatedLight;
+    const TransformParameters& transformParams;
 
     RenderStaticData& staticData;
     ImageManager& imageManager;
@@ -63,7 +73,6 @@ public:
     TimePoint timePoint;
 
     float pixelRatio;
-    Placement::VariableOffsets variableOffsets;
     std::array<float, 2> pixelsToGLUnits;
 
     Programs& programs;
@@ -73,10 +82,6 @@ public:
     gfx::ColorMode colorModeForRenderPass() const;
 
     mat4 matrixForTile(const UnwrappedTileID&, bool aligned = false) const;
-
-    mat4 projMatrix;
-    mat4 alignedProjMatrix;
-    mat4 nearClippedProjMatrix;
 
     // Stencil handling
 public:

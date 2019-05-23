@@ -24,12 +24,12 @@ CircleBucket::CircleBucket(const BucketParameters& parameters, const std::vector
 
 CircleBucket::~CircleBucket() = default;
 
-void CircleBucket::upload(gfx::Context& context) {
-    vertexBuffer = context.createVertexBuffer(std::move(vertices));
-    indexBuffer = context.createIndexBuffer(std::move(triangles));
+void CircleBucket::upload(gfx::UploadPass& uploadPass) {
+    vertexBuffer = uploadPass.createVertexBuffer(std::move(vertices));
+    indexBuffer = uploadPass.createIndexBuffer(std::move(triangles));
 
     for (auto& pair : paintPropertyBinders) {
-        pair.second.upload(context);
+        pair.second.upload(uploadPass);
     }
 
     uploaded = true;
@@ -37,10 +37,6 @@ void CircleBucket::upload(gfx::Context& context) {
 
 bool CircleBucket::hasData() const {
     return !segments.empty();
-}
-
-bool CircleBucket::supportsLayer(const style::Layer::Impl& impl) const {
-    return style::CircleLayer::Impl::staticTypeInfo() == impl.getTypeInfo();
 }
 
 void CircleBucket::addFeature(const GeometryTileFeature& feature,

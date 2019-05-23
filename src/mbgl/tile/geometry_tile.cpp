@@ -54,6 +54,7 @@ GeometryTile::GeometryTile(const OverscaledTileID& id_,
              parameters.mode,
              parameters.pixelRatio,
              parameters.debugOptions & MapDebugOptions::Collision),
+      fileSource(parameters.fileSource),
       glyphManager(parameters.glyphManager),
       imageManager(parameters.imageManager),
       mode(parameters.mode),
@@ -156,7 +157,7 @@ void GeometryTile::onGlyphsAvailable(GlyphMap glyphs) {
 }
 
 void GeometryTile::getGlyphs(GlyphDependencies glyphDependencies) {
-    glyphManager.getGlyphs(*this, std::move(glyphDependencies));
+    glyphManager.getGlyphs(*this, std::move(glyphDependencies), *fileSource);
 }
 
 void GeometryTile::onImagesAvailable(ImageMap images, ImageMap patterns, ImageVersionMap versionMap, uint64_t imageCorrelationID) {
@@ -175,10 +176,10 @@ const optional<ImagePosition> GeometryTile::getPattern(const std::string& patter
     return {};
 }
 
-void GeometryTile::upload(gfx::Context& context) {
+void GeometryTile::upload(gfx::UploadPass& uploadPass) {
     auto uploadFn = [&] (Bucket& bucket) {
         if (bucket.needsUpload()) {
-            bucket.upload(context);
+            bucket.upload(uploadPass);
         }
     };
 
@@ -187,17 +188,17 @@ void GeometryTile::upload(gfx::Context& context) {
     }
 
     if (glyphAtlasImage) {
-        glyphAtlasTexture = context.createTexture(*glyphAtlasImage);
+        glyphAtlasTexture = uploadPass.createTexture(*glyphAtlasImage);
         glyphAtlasImage = {};
     }
 
     if (iconAtlas.image.valid()) {
-        iconAtlasTexture = context.createTexture(iconAtlas.image);
+        iconAtlasTexture = uploadPass.createTexture(iconAtlas.image);
         iconAtlas.image = {};
     }
 
     if (iconAtlasTexture) {
-        iconAtlas.patchUpdatedImages(context, *iconAtlasTexture, imageManager);
+        iconAtlas.patchUpdatedImages(uploadPass, *iconAtlasTexture, imageManager);
     }
 }
 
