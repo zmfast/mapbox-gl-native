@@ -6909,6 +6909,16 @@ public:
             
         }
     }
+    
+    bool onCanRemoveUnusedStyleImage(const std::string& imageIdentifier) override {
+        NSString *imageName = [NSString stringWithUTF8String:imageIdentifier.c_str()];
+        
+        if ([nativeView.delegate respondsToSelector:@selector(mapView:removeStyleImage:)]) {
+            return [nativeView.delegate mapView:nativeView removeStyleImage:imageName];
+        }
+                         
+        return true;
+    }
 
     mbgl::gl::ProcAddress getExtensionFunctionPointer(const char* name) override {
         static CFBundleRef framework = CFBundleGetBundleWithIdentifier(CFSTR("com.apple.opengles"));
