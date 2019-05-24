@@ -232,8 +232,8 @@ CLLocationCoordinate2D randomWorldCoordinate() {
     // saving and restoring when the below notifications are posted
     self.currentState =  [MBXStateManager sharedManager].currentState;
 
-    if (self.currentState != nil) {
-        [self restoreMapState:nil];
+    if (!self.currentState) {
+        self.currentState = [[MBXState alloc] init];
 
         self.currentState.debugLoggingEnabled = YES;
 
