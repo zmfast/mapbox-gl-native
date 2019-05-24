@@ -22,28 +22,28 @@
 }
 
 - (MBXState*)currentState {
-    NSMutableDictionary *mapStateDictionary = [[NSUserDefaults standardUserDefaults] objectForKey:@"mapStateKey"];
+    NSData *encodedMapState = [[NSUserDefaults standardUserDefaults] objectForKey:@"mapStateKey"];
+    NSDictionary *decodedMapState = [NSKeyedUnarchiver unarchiveObjectWithData:encodedMapState];
 
-
-    if (mapStateDictionary == nil) {
+    if (decodedMapState == nil) {
         _currentState = nil;
     } else {
         _currentState = [[MBXState alloc] init];
 
-        if (mapStateDictionary[MBXCamera]) {
-            MGLMapCamera *unpackedCamera = [NSKeyedUnarchiver unarchiveObjectWithData:mapStateDictionary[MBXCamera]];
+        if (decodedMapState[MBXCamera] != NULL) {
+            MGLMapCamera *unpackedCamera = [NSKeyedUnarchiver unarchiveObjectWithData:decodedMapState[MBXCamera]];
             _currentState.camera = unpackedCamera;
         }
 
-        _currentState.showsUserLocation = [mapStateDictionary[MBXShowsUserLocation] boolValue];
-        _currentState.userTrackingMode = [mapStateDictionary[MBXUserTrackingMode] boolValue];
-        _currentState.showsUserHeadingIndicator = [mapStateDictionary[MBXMapShowsHeadingIndicator] boolValue];
-        _currentState.showsMapScale = [mapStateDictionary[MBXShowsMapScale] boolValue];
-        _currentState.showsZoomLevelOrnament = [mapStateDictionary[MBXShowsZoomLevelOrnament] boolValue];
-        _currentState.showsTimeFrameGraph = [mapStateDictionary[MBXShowsTimeFrameGraph] boolValue];
-        _currentState.framerateMeasurementEnabled = [mapStateDictionary[MBXMapFramerateMeasurementEnabled] boolValue];
-        _currentState.debugMask = ((NSNumber *)mapStateDictionary[MBXDebugMaskValue]).intValue;
-        _currentState.debugLoggingEnabled = [mapStateDictionary[MBXDebugLoggingEnabled] boolValue];
+        _currentState.showsUserLocation = [decodedMapState[MBXShowsUserLocation] boolValue];
+        _currentState.userTrackingMode = [decodedMapState[MBXUserTrackingMode] boolValue];
+        _currentState.showsUserHeadingIndicator = [decodedMapState[MBXMapShowsHeadingIndicator] boolValue];
+        _currentState.showsMapScale = [decodedMapState[MBXShowsMapScale] boolValue];
+        _currentState.showsZoomLevelOrnament = [decodedMapState[MBXShowsZoomLevelOrnament] boolValue];
+        _currentState.showsTimeFrameGraph = [decodedMapState[MBXShowsTimeFrameGraph] boolValue];
+        _currentState.framerateMeasurementEnabled = [decodedMapState[MBXMapFramerateMeasurementEnabled] boolValue];
+        _currentState.debugMask = ((NSNumber *)decodedMapState[MBXDebugMaskValue]).intValue;
+        _currentState.debugLoggingEnabled = [decodedMapState[MBXDebugLoggingEnabled] boolValue];
     }
 
     return _currentState;
