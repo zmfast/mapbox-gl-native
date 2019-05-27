@@ -141,10 +141,10 @@
     <!-- Camera tracking settings -->
     <public name="mapbox_trackingInitialMoveThreshold" format="float" type="attr"/>
     <public name="mapbox_trackingMultiFingerMoveThreshold" format="float" type="attr"/>
-    <public name="mapbox_trackingGesturesManagement" format="boolean" type="attr"/>
+    <public name="mapbox_trackingGesturesManagement" type="attr"/>
 
     <!-- Animation duration multiplier -->
-    <public name="mapbox_trackingAnimationDurationMultiplier" format="float" type="attr" />
+    <public name="mapbox_trackingAnimationDurationMultiplier" type="attr" />
 
     <!-- Compass animation -->
     <public name="mapbox_compassAnimationEnabled" format="boolean" type="attr" />
