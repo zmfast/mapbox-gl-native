@@ -68,6 +68,8 @@ public final class UiSettings {
   private boolean increaseRotateThresholdWhenScaling = true;
   private boolean increaseScaleThresholdWhenRotating = true;
 
+  private float zoomRate = 1.0f;
+
   private boolean deselectMarkersOnTap = true;
 
   @Nullable
@@ -131,6 +133,7 @@ public final class UiSettings {
     outState.putBoolean(MapboxConstants.STATE_INCREASE_ROTATE_THRESHOLD, isIncreaseRotateThresholdWhenScaling());
     outState.putBoolean(MapboxConstants.STATE_INCREASE_SCALE_THRESHOLD, isIncreaseScaleThresholdWhenRotating());
     outState.putBoolean(MapboxConstants.STATE_QUICK_ZOOM_ENABLED, isQuickZoomGesturesEnabled());
+    outState.putFloat(MapboxConstants.STATE_ZOOM_RATE, getZoomRate());
   }
 
   private void restoreGestures(Bundle savedInstanceState) {
@@ -147,6 +150,7 @@ public final class UiSettings {
     setIncreaseScaleThresholdWhenRotating(
       savedInstanceState.getBoolean(MapboxConstants.STATE_INCREASE_SCALE_THRESHOLD));
     setQuickZoomGesturesEnabled(savedInstanceState.getBoolean(MapboxConstants.STATE_QUICK_ZOOM_ENABLED));
+    setZoomRate(savedInstanceState.getFloat(MapboxConstants.STATE_ZOOM_RATE, 1.0f));
   }
 
   private void initialiseCompass(MapboxMapOptions options, @NonNull Resources resources) {
@@ -771,6 +775,27 @@ public final class UiSettings {
     this.quickZoomGesturesEnabled = quickZoomGesturesEnabled;
   }
 
+  /**
+   * Returns zoom gesture rate, including pinch to zoom and quick scale.
+   *
+   * @return The zoom rate.
+   */
+  public float getZoomRate() {
+    return zoomRate;
+  }
+
+  /**
+   * Sets zoom gesture rate, including pinch to zoom and quick scale.
+   * <p>
+   * Default value is 1.0f.
+   * </p>
+   *
+   * @param zoomRate The zoom rate.
+   */
+  public void setZoomRate(float zoomRate) {
+    this.zoomRate = zoomRate;
+  }
+
   private void restoreDeselectMarkersOnTap(Bundle savedInstanceState) {
     setDeselectMarkersOnTap(savedInstanceState.getBoolean(MapboxConstants.STATE_DESELECT_MARKER_ON_TAP));
   }
@@ -961,7 +986,7 @@ public final class UiSettings {
    */
   public boolean areAllGesturesEnabled() {
     return rotateGesturesEnabled && tiltGesturesEnabled && zoomGesturesEnabled
-        && scrollGesturesEnabled && doubleTapGesturesEnabled && quickZoomGesturesEnabled;
+      && scrollGesturesEnabled && doubleTapGesturesEnabled && quickZoomGesturesEnabled;
   }
 
   private void saveFocalPoint(Bundle outState) {
